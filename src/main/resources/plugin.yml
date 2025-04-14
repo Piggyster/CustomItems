@@ -1,0 +1,9 @@
+name: CustomItems
+author: Piggyster
+version: ${version}
+api-version: '1.20'
+main: com.customitems.core.CustomItemsPlugin
+depends: NBTAPI
+commands:
+  exampleitems: {}
+  property: {}
