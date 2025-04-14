@@ -16,12 +16,14 @@ public class ItemManager {
     private final Map<String, ItemTemplate> templates;
     private final Map<Material, VanillaItemTemplate> vanillaTemplates;
     private final TemplateLoader templateLoader;
+    private final VanillaTemplateLoader vanillaTemplateLoader;
 
     public ItemManager() {
         plugin = CustomItemsPlugin.getInstance();
         templates = new ConcurrentHashMap<>();
         vanillaTemplates = new ConcurrentHashMap<>();
         templateLoader = new TemplateLoader();
+        vanillaTemplateLoader = new VanillaTemplateLoader();
     }
 
 
@@ -31,6 +33,12 @@ public class ItemManager {
             registerTemplate(template);
         }
         plugin.getLogger().info("Loaded " + loadedTemplates.size() + " templates from JSON files");
+
+        List<VanillaItemTemplate> loadedVanillaTemplates = vanillaTemplateLoader.loadAllTemplates();
+        for (VanillaItemTemplate template : loadedVanillaTemplates) {
+            vanillaTemplates.put(template.getMaterial(), template);
+        }
+        plugin.getLogger().info("Loaded " + loadedVanillaTemplates.size() + " vanilla templates from JSON files");
     }
 
     public boolean registerTemplate(ItemTemplate template) {
@@ -64,8 +72,6 @@ public class ItemManager {
             String templateId = NBT.get(itemStack, nbt -> {
                 return nbt.getString("item_type");
             });
-            //String templateId = itemStack.getItemMeta().getPersistentDataContainer()
-                    //.get(CUSTOM_ITEM_TYPE_KEY, PersistentDataType.STRING);
 
             if (templateId != null) {
                 ItemTemplate template = templates.get(templateId);

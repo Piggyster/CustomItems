@@ -4,7 +4,6 @@ import com.customitems.core.CustomItemsPlugin;
 import com.customitems.core.property.Property;
 import com.customitems.core.property.PropertyRegistry;
 import com.google.gson.*;
-import org.bukkit.ChatColor;
 import org.bukkit.Material;
 
 import java.io.File;
@@ -20,16 +19,17 @@ import java.util.logging.Level;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class TemplateLoader {
+public class VanillaTemplateLoader {
 
     private final CustomItemsPlugin plugin;
     private final Gson gson;
     private final File templateDir;
 
-    public TemplateLoader() {
+
+    public VanillaTemplateLoader() {
         this.plugin = CustomItemsPlugin.getInstance();
         this.gson = new GsonBuilder().setPrettyPrinting().create();
-        this.templateDir = new File(plugin.getDataFolder(), "templates");
+        this.templateDir = new File(plugin.getDataFolder(), "vanilla_templates");
 
         if(!templateDir.exists()) {
             templateDir.mkdirs();
@@ -37,13 +37,13 @@ public class TemplateLoader {
         }
     }
 
-    public List<ItemTemplate> loadAllTemplates() {
-        List<ItemTemplate> templates = new ArrayList<>();
+    public List<VanillaItemTemplate> loadAllTemplates() {
+        List<VanillaItemTemplate> templates = new ArrayList<>();
         try {
             List<File> files = listJsonFiles(templateDir);
             for (File file : files) {
                 try {
-                    ItemTemplate template = loadTemplate(file);
+                    VanillaItemTemplate template = loadTemplate(file);
                     if (template != null) {
                         templates.add(template);
                         plugin.getLogger().info("Loaded template: " + template.getId() + " from " + file.getName());
@@ -56,14 +56,6 @@ public class TemplateLoader {
             plugin.getLogger().log(Level.SEVERE, "Failed to list template files", e);
         }
         return templates;
-    }
-
-    public void loadTemplates() {
-        List<ItemTemplate> templates = loadAllTemplates();
-        for (ItemTemplate template : templates) {
-            plugin.getItemManager().registerTemplate(template);
-        }
-        plugin.getLogger().info("Loaded " + templates.size() + " templates from JSON files");
     }
 
     private List<File> listJsonFiles(File dir) throws IOException {
@@ -87,38 +79,26 @@ public class TemplateLoader {
         }
     }
 
-    private ItemTemplate loadTemplate(File file) {
-        try (FileReader reader = new FileReader(file)) {
+    private VanillaItemTemplate loadTemplate(File file) {
+        try(FileReader reader = new FileReader(file)) {
             JsonObject json = JsonParser.parseReader(reader).getAsJsonObject();
 
-            // Required fields
-            String id = json.get("id").getAsString();
             String materialName = json.get("material").getAsString();
             Material material = Material.valueOf(materialName.toUpperCase());
 
-            // Create template builder
-            ItemTemplate.Builder builder = new ItemTemplate.Builder(id)
-                    .material(material);
 
-            // Optional fields
-            if (json.has("displayName")) {
-                String displayName = json.get("displayName").getAsString();
-                // Process color codes if the display name uses & for formatting
-                displayName = ChatColor.translateAlternateColorCodes('&', displayName);
-                builder.displayName(displayName);
-            }
-
+            ItemRarity rarity = ItemRarity.COMMON;
             if (json.has("rarity")) {
                 String rarityName = json.get("rarity").getAsString();
                 try {
-                    ItemRarity rarity = ItemRarity.valueOf(rarityName.toUpperCase());
-                    builder.rarity(rarity);
+                    rarity = ItemRarity.valueOf(rarityName.toUpperCase());
                 } catch (IllegalArgumentException e) {
-                    plugin.getLogger().warning("Invalid rarity in template " + id + ": " + rarityName);
+                    plugin.getLogger().warning("Invalid rarity in template " + materialName + ": " + rarityName);
                 }
             }
 
-            // Process properties
+            List<Supplier<Property>> suppliers = new ArrayList<>();
+
             if (json.has("properties")) {
                 JsonArray propertiesArray = json.getAsJsonArray("properties");
                 for (JsonElement element : propertiesArray) {
@@ -127,26 +107,24 @@ public class TemplateLoader {
 
                     Supplier<Property> propertySupplier = createPropertySupplier(type, propertyJson);
                     if (propertySupplier != null) {
-                        builder.addProperty(propertySupplier);
+                        suppliers.add(propertySupplier);
                     }
                 }
             }
 
-            return builder.build();
-        } catch (Exception ex) {
+            return new VanillaItemTemplate(material, rarity, suppliers);
+        } catch(IOException ex) {
             plugin.getLogger().log(Level.WARNING, "Failed to load template from file: " + file.getName(), ex);
             return null;
         }
     }
 
     private void createExampleTemplate() {
-        File exampleFile = new File(templateDir, "exotic_sword.json");
+        File exampleFile = new File(templateDir, "iron_sword.json");
 
         JsonObject json = new JsonObject();
-        json.addProperty("id", "exotic_sword");
-        json.addProperty("material", "diamond_sword");
-        json.addProperty("displayName", "Exotic Sword");
-        json.addProperty("rarity", "epic");
+        json.addProperty("material", "iron_sword");
+        json.addProperty("rarity", "uncommon");
 
         // Add properties
         JsonArray properties = new JsonArray();
@@ -155,7 +133,7 @@ public class TemplateLoader {
         JsonObject damageProperty = new JsonObject();
         damageProperty.addProperty("type", "attribute");
         damageProperty.addProperty("attributeType", "damage");
-        damageProperty.addProperty("value", 15.0);
+        damageProperty.addProperty("value", 5.0);
         properties.add(damageProperty);
 
 

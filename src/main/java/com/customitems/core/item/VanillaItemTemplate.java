@@ -45,7 +45,13 @@ public class VanillaItemTemplate extends ItemTemplate {
     }
 
 
-
+    public VanillaItemTemplate(Material material, ItemRarity rarity, List<Supplier<Property>> defaultPropertySuppliers) {
+        super("vanilla:" + material.toString().toLowerCase(),
+                getNameFromMaterial(material),
+                material,
+                rarity,
+                defaultPropertySuppliers);
+    }
 
     public VanillaItemTemplate(Material material) {
         super("vanilla:" + material.toString().toLowerCase(),
@@ -53,5 +59,15 @@ public class VanillaItemTemplate extends ItemTemplate {
                 material,
                 ItemRarity.COMMON,
                 List.of());
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof VanillaItemTemplate)) return false;
+
+        VanillaItemTemplate that = (VanillaItemTemplate) o;
+
+        return getMaterial() == that.getMaterial();
     }
 }
