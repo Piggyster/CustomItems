@@ -4,6 +4,7 @@ import com.customitems.core.item.CustomItem;
 import com.customitems.core.property.AbstractProperty;
 import com.customitems.core.property.EventListener;
 import com.customitems.core.property.LoreContributor;
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
@@ -31,7 +32,9 @@ public class AbilityProperty extends AbstractProperty implements EventListener<P
         CustomItem item = getItem();
         if(item == null) return;
 
-        if(event.getAction() != Action.RIGHT_CLICK_BLOCK || event.getAction() != Action.RIGHT_CLICK_AIR) return;
+        Bukkit.getLogger().warning(event.getAction().toString());
+
+        if(event.getAction() != Action.RIGHT_CLICK_BLOCK && event.getAction() != Action.RIGHT_CLICK_AIR) return;
 
         if(event.getItem() == null || !event.getItem().isSimilar(item.getItemStack())) {
             return;

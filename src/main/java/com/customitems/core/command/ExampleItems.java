@@ -1,6 +1,8 @@
 package com.customitems.core.command;
 
 import com.customitems.core.CustomItemsPlugin;
+import com.customitems.core.inventory.CustomPlayerInventory;
+import com.customitems.core.inventory.InventoryManager;
 import com.customitems.core.item.CustomItem;
 import com.customitems.core.item.ItemManager;
 import org.bukkit.command.Command;
@@ -24,8 +26,11 @@ public class ExampleItems implements CommandExecutor {
         }
 
         ItemManager itemManager = plugin.getItemManager();
+        InventoryManager inventoryManager = plugin.getInventoryManager();
+        CustomPlayerInventory inventory = inventoryManager.getPlayerInventory(player);
+
         CustomItem item = itemManager.createItem("exotic_sword");
-        player.getInventory().addItem(item.getItemStack());
+        inventory.addItem(item);
         return false;
     }
 }

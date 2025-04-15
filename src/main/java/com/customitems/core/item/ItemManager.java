@@ -61,9 +61,9 @@ public class ItemManager {
         return new CustomItem(template);
     }
 
-    public Optional<CustomItem> getCustomItem(ItemStack itemStack) {
+    public CustomItem getCustomItem(ItemStack itemStack) {
         if (itemStack == null) {
-            return Optional.empty();
+            return null;
         }
 
         // Check if this is a custom item
@@ -76,14 +76,14 @@ public class ItemManager {
             if (templateId != null) {
                 ItemTemplate template = templates.get(templateId);
                 if (template != null) {
-                    return Optional.of(new CustomItem(itemStack, template));
+                    return new CustomItem(itemStack, template);
                 }
             }
         }
 
         // If not a custom item or template not found, use the vanilla template
         VanillaItemTemplate vanillaTemplate = getVanillaTemplate(itemStack.getType());
-        return Optional.of(new CustomItem(itemStack, vanillaTemplate));
+        return new CustomItem(itemStack, vanillaTemplate);
     }
 
 

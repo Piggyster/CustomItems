@@ -2,95 +2,102 @@ package com.customitems.core.inventory;
 
 import com.customitems.core.CustomItemsPlugin;
 import com.customitems.core.item.CustomItem;
+import com.customitems.core.property.EventListener;
 import org.bukkit.entity.Player;
+import org.bukkit.event.Event;
+import org.bukkit.event.EventHandler;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 public class CustomPlayerInventory {
 
     private Map<Integer, CustomItem> contents;
     private Player player;
     private PlayerInventory orgin;
+    private Set<Integer> listeners;
 
     public CustomPlayerInventory(Player player) {
         contents = new ConcurrentHashMap<>();
+        listeners = new HashSet<>();
         this.player = player;
         orgin = player.getInventory();
-
         refreshInventory();
     }
 
     public void refreshInventory() {
         contents.clear();
+        listeners.clear();
 
         ItemStack[] items = orgin.getContents();
         for(int i = 0; i < items.length; i++) {
-            ItemStack item = items[i];
-            if (item != null && !item.getType().isAir()) {
-                Optional<CustomItem> customItem = CustomItemsPlugin.getInstance()
-                        .getItemManager().getCustomItem(item);
-                if(customItem.isPresent()) {
-                    customItem.get().savePropertiesToItem();
-                    contents.put(i, customItem.get());
-                }
-            }
+            refreshSlot(i);
         }
     }
 
-    public void refreshSlot(int slot) {
+    public CustomItem refreshSlot(int slot) {
         if(slot < 0 || slot >= orgin.getSize()) {
-            return;
+            return null;
         }
-
         ItemStack item = orgin.getItem(slot);
         if(item == null || item.getType().isAir()) {
             contents.remove(slot);
+            listeners.remove(slot);
+            return null;
         } else {
-            Optional<CustomItem> customItem = CustomItemsPlugin.getInstance().getItemManager().getCustomItem(item);
-
-            if(customItem.isPresent()) {
-                contents.put(slot, customItem.get());
+            CustomItem customItem = CustomItemsPlugin.getInstance().getItemManager().getCustomItem(item);
+            if(customItem != null) {
+                contents.put(slot, customItem);
+                if(customItem.hasEventHandler()) {
+                    listeners.add(slot);
+                } else {
+                    listeners.remove(slot);
+                }
+                return customItem;
             } else {
                 contents.remove(slot);
+                listeners.remove(slot);
+                return null;
             }
         }
     }
 
-    public Optional<CustomItem> getItem(int slot) {
+    public CustomItem getItem(int slot) {
         if(slot < 0 || slot >= orgin.getSize()) {
-            return Optional.empty();
+            return null;
         }
 
         ItemStack item = orgin.getItem(slot);
         if(item != null && !item.getType().isAir()) {
             CustomItem cachedItem = contents.get(slot);
             if(cachedItem != null && cachedItem.getItemStack().equals(item)) {
-                return Optional.of(cachedItem);
+                return cachedItem;
             }
-
-            Optional<CustomItem> customItem = CustomItemsPlugin.getInstance().getItemManager().getCustomItem(item);
-
-            if(customItem.isPresent()) {
-                contents.put(slot, customItem.get());
-                return customItem;
-            }
+            return refreshSlot(slot);
         }
         contents.remove(slot);
-        return Optional.empty();
+        listeners.remove(slot);
+        return null;
     }
 
     public void setItem(int slot, CustomItem customItem) {
         if(customItem == null) {
             orgin.setItem(slot, null);
             contents.remove(slot);
+            listeners.remove(slot);
         } else {
             customItem.savePropertiesToItem();
             orgin.setItem(slot, customItem.getItemStack());
             contents.put(slot, customItem);
+
+            if(customItem.hasEventHandler()) {
+                listeners.add(slot);
+            } else {
+                listeners.remove(slot);
+            }
         }
     }
 
@@ -107,5 +114,16 @@ public class CustomPlayerInventory {
     public Map<Integer, CustomItem> getContents() {
         refreshInventory();
         return contents;
+    }
+
+
+    public <T extends Event> void handleEvent(T event) {
+        for(int slot : listeners) {
+            CustomItem item = contents.get(slot);
+            if(item == null) {
+                throw new IllegalStateException("Listener is present but CustomItem is missing at slot " + slot);
+            }
+            item.handleEvent(event);
+        }
     }
 }

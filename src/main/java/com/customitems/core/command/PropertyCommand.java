@@ -19,7 +19,7 @@ public class PropertyCommand implements CommandExecutor {
         ItemStack heldItem = player.getInventory().getItemInMainHand();
         if(heldItem.getType().isAir()) return false;
 
-        CustomItem customItem = CustomItemsPlugin.getInstance().getItemManager().getCustomItem(heldItem).get();
+        CustomItem customItem = CustomItemsPlugin.getInstance().getItemManager().getCustomItem(heldItem);
 
         customItem.getProperties().forEach(property -> {
             player.sendMessage(property.toString());

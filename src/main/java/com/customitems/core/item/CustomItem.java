@@ -72,6 +72,15 @@ public class CustomItem {
         }
     }
 
+    public boolean hasEventHandler() {
+        for(Property property : properties.values()) {
+            if(property instanceof EventListener<?>) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public void savePropertiesToItem() {
         //save from map to NBT
 
@@ -128,8 +137,6 @@ public class CustomItem {
                     }
                 }
             }
-
-
         });
     }
 

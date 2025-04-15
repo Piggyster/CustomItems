@@ -11,8 +11,8 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityPickupItemEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
-import org.bukkit.event.player.PlayerPickupItemEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.ItemStack;
 
@@ -47,12 +47,9 @@ public class InventoryManager implements Listener {
 
     private <T extends Event> void handleEvent(Player player, T event) {
         CustomPlayerInventory inventory = getPlayerInventory(player);
+        inventory.handleEvent(event);
 
         Bukkit.getLogger().warning("Handling event: " + event.getEventName());
-        for(CustomItem item : inventory.getContents().values()) {
-            item.handleEvent(event);
-        }
-
     }
 
     @EventHandler
@@ -78,20 +75,24 @@ public class InventoryManager implements Listener {
     }
 
 
-
     @EventHandler
     public void onEntityPickupItem(EntityPickupItemEvent event) {
         if(!(event.getEntity() instanceof Player player)) return;
 
         Item droppedItem = event.getItem();
 
-        Optional<CustomItem> item = CustomItemsPlugin.getInstance().getItemManager().getCustomItem(droppedItem.getItemStack());
+        CustomItem item = CustomItemsPlugin.getInstance().getItemManager().getCustomItem(droppedItem.getItemStack());
 
-        if(item.isPresent()) {
-            item.get().savePropertiesToItem();
-            droppedItem.setItemStack(item.get().getItemStack());
+        if(item != null) {
+            item.savePropertiesToItem();
+            droppedItem.setItemStack(item.getItemStack());
         } else {
             droppedItem.setItemStack(new ItemStack(Material.AIR));
         }
+    }
+
+    @EventHandler
+    public void onPlayerInteract(PlayerInteractEvent event) {
+        handleEvent(event.getPlayer(), event);
     }
 }
