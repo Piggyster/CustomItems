@@ -5,8 +5,11 @@ import com.customitems.core.command.PropertyCommand;
 import com.customitems.core.inventory.InventoryManager;
 import com.customitems.core.item.ItemManager;
 import com.customitems.core.property.PropertyRegistry;
-import com.customitems.core.property.impl.*;
-import org.bukkit.NamespacedKey;
+import com.customitems.core.property.impl.UniqueProperty;
+import com.customitems.core.property.impl.ability.AbilityType;
+import com.customitems.core.property.impl.ability.TeleportAbilityProperty;
+import com.customitems.core.property.impl.attribute.AttributeType;
+import com.customitems.core.property.impl.attribute.BasicAttributeProperty;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class CustomItemsPlugin extends JavaPlugin {
@@ -31,21 +34,8 @@ public class CustomItemsPlugin extends JavaPlugin {
     }
 
     private void registerProperties() {
-        PropertyRegistry.registerJsonFactory("attribute", jsonObject -> {
-            String attributeTypeName = jsonObject.get("attributeType").getAsString();
-            AttributeType attributeType = AttributeType.fromInternalName(attributeTypeName.toLowerCase());
-            double baseValue = jsonObject.get("value").getAsDouble();
-            return new AttributeProperty(attributeType, baseValue);
-        });
-
-        PropertyRegistry.registerJsonFactory("sharp", jsonObject -> new SharpProperty());
-        PropertyRegistry.registerPropertyFactory("sharp", nbt -> new SharpProperty());
-
-        PropertyRegistry.registerJsonFactory("ability", jsonObject -> {
-            String abilityTypeName = jsonObject.get("abilityType").getAsString();
-            AbilityType abilityType = AbilityType.fromInternalName(abilityTypeName.toLowerCase());
-            return new AbilityProperty(abilityType);
-        });
+        PropertyRegistry.registerJson("unique", json -> new UniqueProperty());
+        PropertyRegistry.registerNbt("unique", nbt -> new UniqueProperty(nbt.getUUID("uuid")));
     }
 
     public static CustomItemsPlugin getInstance() {

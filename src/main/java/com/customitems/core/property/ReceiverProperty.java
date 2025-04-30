@@ -6,7 +6,5 @@ public interface ReceiverProperty<T> extends Property {
 
     boolean removeModification(String sourcePropertyType);
 
-    T getBaseValue();
-
     T getEffectiveValue();
 }

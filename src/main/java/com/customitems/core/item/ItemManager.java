@@ -53,7 +53,7 @@ public class ItemManager {
         return templates.get(id);
     }
 
-    public CustomItem createItem(String templateId) {
+    protected CustomItem createItem(String templateId) {
         ItemTemplate template = templates.get(templateId);
         if (template == null) {
             return null;
@@ -67,7 +67,7 @@ public class ItemManager {
         }
 
         // Check if this is a custom item
-        if (CustomItem.isCustomItem(itemStack)) {
+        if (isCustomItem(itemStack)) {
 
             String templateId = NBT.get(itemStack, nbt -> {
                 return nbt.getString("item_type");
@@ -84,6 +84,16 @@ public class ItemManager {
         // If not a custom item or template not found, use the vanilla template
         VanillaItemTemplate vanillaTemplate = getVanillaTemplate(itemStack.getType());
         return new CustomItem(itemStack, vanillaTemplate);
+    }
+
+    public boolean isCustomItem(ItemStack itemStack) {
+        if (itemStack == null || !itemStack.hasItemMeta()) {
+            return false;
+        }
+
+        return NBT.get(itemStack, nbt -> {
+            return nbt.hasTag("item_type");
+        });
     }
 
 

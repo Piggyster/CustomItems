@@ -2,29 +2,26 @@ package com.customitems.core.inventory;
 
 import com.customitems.core.CustomItemsPlugin;
 import com.customitems.core.item.CustomItem;
-import com.customitems.core.property.EventListener;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
-import org.bukkit.event.EventHandler;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
 public class CustomPlayerInventory {
 
     private Map<Integer, CustomItem> contents;
     private Player player;
-    private PlayerInventory orgin;
+    private PlayerInventory origin;
     private Set<Integer> listeners;
 
     public CustomPlayerInventory(Player player) {
         contents = new ConcurrentHashMap<>();
         listeners = new HashSet<>();
         this.player = player;
-        orgin = player.getInventory();
+        origin = player.getInventory();
         refreshInventory();
     }
 
@@ -32,17 +29,17 @@ public class CustomPlayerInventory {
         contents.clear();
         listeners.clear();
 
-        ItemStack[] items = orgin.getContents();
+        ItemStack[] items = origin.getContents();
         for(int i = 0; i < items.length; i++) {
             refreshSlot(i);
         }
     }
 
     public CustomItem refreshSlot(int slot) {
-        if(slot < 0 || slot >= orgin.getSize()) {
+        if(slot < 0 || slot >= origin.getSize()) {
             return null;
         }
-        ItemStack item = orgin.getItem(slot);
+        ItemStack item = origin.getItem(slot);
         if(item == null || item.getType().isAir()) {
             contents.remove(slot);
             listeners.remove(slot);
@@ -66,11 +63,11 @@ public class CustomPlayerInventory {
     }
 
     public CustomItem getItem(int slot) {
-        if(slot < 0 || slot >= orgin.getSize()) {
+        if(slot < 0 || slot >= origin.getSize()) {
             return null;
         }
 
-        ItemStack item = orgin.getItem(slot);
+        ItemStack item = origin.getItem(slot);
         if(item != null && !item.getType().isAir()) {
             CustomItem cachedItem = contents.get(slot);
             if(cachedItem != null && cachedItem.getItemStack().equals(item)) {
@@ -85,12 +82,12 @@ public class CustomPlayerInventory {
 
     public void setItem(int slot, CustomItem customItem) {
         if(customItem == null) {
-            orgin.setItem(slot, null);
+            origin.setItem(slot, null);
             contents.remove(slot);
             listeners.remove(slot);
         } else {
             customItem.savePropertiesToItem();
-            orgin.setItem(slot, customItem.getItemStack());
+            origin.setItem(slot, customItem.getItemStack());
             contents.put(slot, customItem);
 
             if(customItem.hasEventHandler()) {
@@ -103,7 +100,7 @@ public class CustomPlayerInventory {
 
     public boolean addItem(CustomItem customItem) {
         for(int i = 0; i < 36; i++) {
-            if(orgin.getItem(i) == null || orgin.getItem(i).getType().isAir()) {
+            if(origin.getItem(i) == null || origin.getItem(i).getType().isAir()) {
                 setItem(i, customItem);
                 return true;
             }

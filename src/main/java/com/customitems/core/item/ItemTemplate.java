@@ -46,6 +46,7 @@ public class ItemTemplate {
         }
 
         public Builder addProperty(Supplier<Property> propertySupplier) {
+            if(propertySupplier == null) return this;
             this.defaultPropertySuppliers.add(propertySupplier);
             return this;
         }

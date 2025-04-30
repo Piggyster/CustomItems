@@ -79,7 +79,7 @@ public class TemplateLoader {
     private Supplier<Property> createPropertySupplier(String type, JsonObject json) {
         if (PropertyRegistry.hasJsonFactory(type)) {
             // Use the registered JSON factory for this property type
-            return () -> PropertyRegistry.createPropertyFromJson(type, json);
+            return () -> PropertyRegistry.fromJson(type, json);
         } else {
             // Unknown property type
             plugin.getLogger().warning("Unknown property type: " + type);

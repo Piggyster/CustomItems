@@ -21,11 +21,6 @@ public abstract class AbstractProperty implements Property {
     }
 
     @Override
-    public void onItemCreated(CustomItem item) {
-        // Default implementation does nothing
-    }
-
-    @Override
     public CustomItem getItem() {
         return item;
     }

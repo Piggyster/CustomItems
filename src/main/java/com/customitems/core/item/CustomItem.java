@@ -2,39 +2,35 @@ package com.customitems.core.item;
 
 import com.customitems.core.CustomItemsPlugin;
 import com.customitems.core.property.*;
-import com.customitems.core.property.EventListener;
+import com.customitems.core.property.ability.EventListenerProperty;
 import de.tr7zw.nbtapi.NBT;
 import de.tr7zw.nbtapi.iface.ReadWriteNBT;
 import de.tr7zw.nbtapi.iface.ReadWriteNBTCompoundList;
 import de.tr7zw.nbtapi.iface.ReadableNBTList;
-import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.event.Event;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
+import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 
-public class CustomItem {
+public class CustomItem implements Serializable {
 
-    public static boolean isCustomItem(ItemStack itemStack) {
-        if (itemStack == null || !itemStack.hasItemMeta()) {
-            return false;
-        }
 
-        return NBT.get(itemStack, nbt -> {
-            return nbt.hasTag("item_type");
-        });
+    public static CustomItem of(ItemStack itemStack) {
+        return CustomItemsPlugin.getInstance().getItemManager().getCustomItem(itemStack);
     }
-
 
     private ItemStack itemStack;
     private final ItemTemplate template;
     private final Map<String, Property> properties;
     private final List<ModificationProperty<?>> modificationProperties;
+    private final List<EventListenerProperty<?>> listenerProperties;
+    private boolean dirty;
 
 
     public CustomItem(ItemTemplate template) {
@@ -42,12 +38,20 @@ public class CustomItem {
     }
 
     public CustomItem(ItemStack itemStack, ItemTemplate template) {
-        this.itemStack = itemStack;
-        this.template = template;
+        this.itemStack = itemStack; //add check for null itemstack
+        this.template = template; //add check for null template
         properties = new ConcurrentHashMap<>();
         modificationProperties = new ArrayList<>();
+        listenerProperties = new ArrayList<>();
 
-        markAsCustomItem(); //checks for meta to avoid vanilla items
+        if(template instanceof VanillaItemTemplate) {
+            if(!itemStack.hasItemMeta()) {
+                updateItemDisplay();
+            }
+            return;
+        }
+
+        boolean marked = markAsCustomItem();
 
         loadPropertiesFromItem();
 
@@ -57,28 +61,27 @@ public class CustomItem {
             }
         }
 
-        updateItemDisplay(); //could be redundant since we update display in addProperty. keep for now since sometimes no properties are added
+        NBT.get(itemStack, nbt -> {
+            dirty = nbt.hasTag("dirty");
+        });
+
+        if(dirty || marked) {
+            updateItemDisplay();
+        }
     }
 
     @SuppressWarnings("unchecked")
     public <T extends Event> void handleEvent(T event) {
-        for(Property property : properties.values()) {
-            if(property instanceof EventListener<?>) {
-                EventListener<Event> listener = (EventListener<Event>) property;
-                if(listener.getEventClass().isInstance(event)) {
-                    listener.handleEvent(event);
-                }
+        for(EventListenerProperty<?> listener : listenerProperties) {
+            if(listener.getEventClass().isInstance(event)) {
+                listener.handleEvent(event);
             }
         }
+
     }
 
     public boolean hasEventHandler() {
-        for(Property property : properties.values()) {
-            if(property instanceof EventListener<?>) {
-                return true;
-            }
-        }
-        return false;
+        return !listenerProperties.isEmpty();
     }
 
     public void savePropertiesToItem() {
@@ -119,13 +122,11 @@ public class CustomItem {
                 ReadableNBTList<ReadWriteNBT> properties = nbt.getCompoundList("properties");
                 for(ReadWriteNBT propertyNbt : properties) {
                     String propertyType = propertyNbt.getString("type");
-                    if(PropertyRegistry.hasFactory(propertyType)) {
-                        Property property = PropertyRegistry.createProperty(propertyType, propertyNbt);
-                        if(property != null) {
-                            addProperty(property);
-                        }
+                    Property property = PropertyRegistry.fromNbt(propertyType, propertyNbt);
+
+                    if(property != null) {
+                        addProperty(property);
                     } else {
-                        //find in template if property does not have a factory
                         for(Property templateProperty : template.getDefaultProperties()) { //loop through default template properties
                             if(templateProperty instanceof PersistentProperty persistentProperty && templateProperty.getType().equals(propertyType)) { //check the types for a match
                                 if(persistentProperty.loadData(propertyNbt)) { //load data from container into the property
@@ -140,12 +141,30 @@ public class CustomItem {
         });
     }
 
-
-    private void markAsCustomItem() {
-        if(template instanceof VanillaItemTemplate) return;
-
+    public void markDirty() {
         NBT.modify(itemStack, nbt -> {
-            nbt.setString("item_type", template.getId());
+            nbt.setBoolean("dirty", true);
+        });
+        dirty = true;
+    }
+
+    public void markClean() {
+        NBT.modify(itemStack, nbt -> {
+            nbt.removeKey("dirty");
+        });
+        dirty = false;
+    }
+
+
+    private boolean markAsCustomItem() {
+        if(template instanceof VanillaItemTemplate) return false;
+        return NBT.modify(itemStack, nbt -> {
+            if(!nbt.hasTag("item_type")) {
+                nbt.setString("item_type", template.getId());
+                return true;
+            } else {
+                return false;
+            }
         });
     }
 
@@ -181,6 +200,10 @@ public class CustomItem {
 
         itemStack.setItemMeta(meta);
         itemStack.setType(template.getMaterial());
+
+        itemStack.setItemMeta(itemStack.getItemMeta());
+
+        markClean();
     }
 
     public ItemStack getItemStack() {
@@ -214,7 +237,6 @@ public class CustomItem {
         }
         properties.put(property.getType(), property);
         property.onAttach(this);
-        property.onItemCreated(this);
 
         if(property instanceof ModificationProperty<?>) {
             modificationProperties.add((ModificationProperty<?>) property);
@@ -224,9 +246,11 @@ public class CustomItem {
             if(property.getType().equals(modificationProperty.getTargetPropertyType())) {
                 modificationProperty.applyModification();
             }
-        }
+        } //todo relook this for proper calculation
 
-        updateItemDisplay();
+        if(property instanceof EventListenerProperty<?>) {
+            listenerProperties.add(((EventListenerProperty<?>) property));
+        }
         return true;
     }
 
