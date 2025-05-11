@@ -9,6 +9,7 @@ import de.tr7zw.nbtapi.iface.ReadWriteNBTCompoundList;
 import de.tr7zw.nbtapi.iface.ReadableNBTList;
 import org.bukkit.ChatColor;
 import org.bukkit.event.Event;
+import org.bukkit.event.EventPriority;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -32,7 +33,6 @@ public class CustomItem implements Serializable {
     private final List<EventListenerProperty<?>> listenerProperties;
     private boolean dirty;
 
-
     public CustomItem(ItemTemplate template) {
         this(template.createItemStack(), template);
     }
@@ -53,7 +53,7 @@ public class CustomItem implements Serializable {
 
         boolean marked = markAsCustomItem();
 
-        loadPropertiesFromItem();
+        load();
 
         for(Property property : template.getDefaultProperties()) {
             if(!hasProperty(property.getType())) {
@@ -84,7 +84,7 @@ public class CustomItem implements Serializable {
         return !listenerProperties.isEmpty();
     }
 
-    public void savePropertiesToItem() {
+    public void save() {
         //save from map to NBT
 
         //possibly add checks to avoid saving if nothing has changed
@@ -116,7 +116,7 @@ public class CustomItem implements Serializable {
     }
 
 
-    private void loadPropertiesFromItem() {
+    private void load() {
         NBT.get(itemStack, nbt -> {
             if(nbt.hasTag("properties")) {
                 ReadableNBTList<ReadWriteNBT> properties = nbt.getCompoundList("properties");

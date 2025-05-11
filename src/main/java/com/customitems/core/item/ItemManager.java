@@ -8,6 +8,7 @@ import org.bukkit.inventory.ItemStack;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class ItemManager {
@@ -18,12 +19,15 @@ public class ItemManager {
     private final TemplateLoader templateLoader;
     private final VanillaTemplateLoader vanillaTemplateLoader;
 
+    private final Map<ItemStack, CustomItem> cache;
+
     public ItemManager() {
         plugin = CustomItemsPlugin.getInstance();
         templates = new ConcurrentHashMap<>();
         vanillaTemplates = new ConcurrentHashMap<>();
         templateLoader = new TemplateLoader();
         vanillaTemplateLoader = new VanillaTemplateLoader();
+        cache = new WeakHashMap<>();
     }
 
 
@@ -66,6 +70,9 @@ public class ItemManager {
             return null;
         }
 
+        CustomItem item = cache.get(itemStack);
+        if(item != null) return item;
+
         // Check if this is a custom item
         if (isCustomItem(itemStack)) {
 
@@ -76,7 +83,9 @@ public class ItemManager {
             if (templateId != null) {
                 ItemTemplate template = templates.get(templateId);
                 if (template != null) {
-                    return new CustomItem(itemStack, template);
+                    item = new CustomItem(itemStack, template);
+                    cache.put(itemStack, item);
+                    return item;
                 }
             }
         }
