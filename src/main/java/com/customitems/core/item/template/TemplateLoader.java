@@ -1,11 +1,14 @@
-package com.customitems.core.item;
+package com.customitems.core.item.template;
 
-import com.customitems.core.CustomItemsPlugin;
+import com.customitems.core.ItemPlugin;
+import com.customitems.core.item.ItemRarity;
 import com.customitems.core.property.Property;
 import com.customitems.core.property.PropertyRegistry;
 import com.google.gson.*;
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.io.FileReader;
@@ -16,57 +19,54 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
-import java.util.logging.Level;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+/**
+ * TemplateLoader is responsible for loading item templates from a specified directory.
+ * It creates the directory if it does not exist.
+ */
+
 public class TemplateLoader {
 
-    private final CustomItemsPlugin plugin;
-    private final Gson gson;
-    private final File templateDir;
+    protected final File directory;
+    protected final PropertyRegistry registry;
+    protected final Gson gson;
 
-    public TemplateLoader() {
-        this.plugin = CustomItemsPlugin.getInstance();
-        this.gson = new GsonBuilder().setPrettyPrinting().create();
-        this.templateDir = new File(plugin.getDataFolder(), "templates");
 
-        if(!templateDir.exists()) {
-            templateDir.mkdirs();
+    public TemplateLoader(@NotNull File directory) {
+        this.directory = directory;
+        registry = ItemPlugin.get().getRegistry();
+        gson = new GsonBuilder().setPrettyPrinting().create();
+
+        if(!directory.exists()) {
+            directory.mkdirs();
             createExampleTemplate();
         }
     }
 
-    public List<ItemTemplate> loadAllTemplates() {
-        List<ItemTemplate> templates = new ArrayList<>();
+    public List<Template> loadAllTemplates() {
+        List<Template> templates = new ArrayList<>();
         try {
-            List<File> files = listJsonFiles(templateDir);
+            List<File> files = listJsonFiles(directory);
             for (File file : files) {
                 try {
-                    ItemTemplate template = loadTemplate(file);
+                    Template template = loadTemplate(file);
                     if (template != null) {
                         templates.add(template);
-                        plugin.getLogger().info("Loaded template: " + template.getId() + " from " + file.getName());
+                        Bukkit.getLogger().info("Loaded template: " + template.getId() + " from " + file.getName());
                     }
                 } catch (Exception e) {
-                    plugin.getLogger().log(Level.WARNING, "Failed to load template from " + file.getName(), e);
+                    Bukkit.getLogger().warning("Failed to load template from " + file.getName() + ": " + e.getMessage());
                 }
             }
         } catch (IOException e) {
-            plugin.getLogger().log(Level.SEVERE, "Failed to list template files", e);
+            Bukkit.getLogger().severe("Failed to list template files: " + e.getMessage());
         }
         return templates;
     }
 
-    public void loadTemplates() {
-        List<ItemTemplate> templates = loadAllTemplates();
-        for (ItemTemplate template : templates) {
-            plugin.getItemManager().registerTemplate(template);
-        }
-        plugin.getLogger().info("Loaded " + templates.size() + " templates from JSON files");
-    }
-
-    private List<File> listJsonFiles(File dir) throws IOException {
+    protected List<File> listJsonFiles(File dir) throws IOException {
         try (Stream<Path> stream = Files.walk(dir.toPath(), 1)) {
             return stream
                     .filter(path -> !path.equals(dir.toPath()))
@@ -77,21 +77,20 @@ public class TemplateLoader {
     }
 
     private Supplier<Property> createPropertySupplier(String type, JsonObject json) {
-        if (PropertyRegistry.hasJsonFactory(type)) {
-            // Use the registered JSON factory for this property type
-            return () -> PropertyRegistry.fromJson(type, json);
-        } else {
-            // Unknown property type
-            plugin.getLogger().warning("Unknown property type: " + type);
+        Class<? extends Property> clazz = registry.getClass(type);
+
+        if(clazz == null || !registry.hasJsonFactory(clazz)) {
+            Bukkit.getLogger().warning("Unknown property type: " + type);
             return null;
         }
+
+        return () -> registry.fromJson(clazz, json);
     }
 
-    private ItemTemplate loadTemplate(File file) {
+    protected Template loadTemplate(File file) {
         try (FileReader reader = new FileReader(file)) {
             JsonObject json = JsonParser.parseReader(reader).getAsJsonObject();
 
-            // Required fields
             String id = json.get("id").getAsString();
             String materialName = json.get("material").getAsString();
             Material material = Material.valueOf(materialName.toUpperCase());
@@ -114,19 +113,18 @@ public class TemplateLoader {
                     ItemRarity rarity = ItemRarity.valueOf(rarityName.toUpperCase());
                     builder.rarity(rarity);
                 } catch (IllegalArgumentException e) {
-                    plugin.getLogger().warning("Invalid rarity in template " + id + ": " + rarityName);
+                    Bukkit.getLogger().warning("Invalid rarity in template " + id + ": " + rarityName);
                 }
             }
 
             // Process properties
             if (json.has("properties")) {
-                JsonArray propertiesArray = json.getAsJsonArray("properties");
-                for (JsonElement element : propertiesArray) {
-                    JsonObject propertyJson = element.getAsJsonObject();
-                    String type = propertyJson.get("type").getAsString();
+                JsonObject propertiesJson = json.getAsJsonObject("properties");
+                for(String key : propertiesJson.keySet()) {
+                    JsonObject propertyJson = propertiesJson.getAsJsonObject(key);
 
-                    Supplier<Property> propertySupplier = createPropertySupplier(type, propertyJson);
-                    if (propertySupplier != null) {
+                    Supplier<Property> propertySupplier = createPropertySupplier(key, propertyJson);
+                    if(propertySupplier != null) {
                         builder.addProperty(propertySupplier);
                     }
                 }
@@ -134,13 +132,13 @@ public class TemplateLoader {
 
             return builder.build();
         } catch (Exception ex) {
-            plugin.getLogger().log(Level.WARNING, "Failed to load template from file: " + file.getName(), ex);
+            Bukkit.getLogger().warning("Failed to load template from file: " + file.getName() + " - " + ex.getMessage());
             return null;
         }
     }
 
-    private void createExampleTemplate() {
-        File exampleFile = new File(templateDir, "exotic_sword.json");
+    protected void createExampleTemplate() {
+        File exampleFile = new File(directory, "exotic_sword.json");
 
         JsonObject json = new JsonObject();
         json.addProperty("id", "exotic_sword");
@@ -148,25 +146,27 @@ public class TemplateLoader {
         json.addProperty("displayName", "Exotic Sword");
         json.addProperty("rarity", "epic");
 
+
+
         // Add properties
-        JsonArray properties = new JsonArray();
+        JsonObject properties = new JsonObject();
 
         // Attribute
-        JsonObject damageProperty = new JsonObject();
-        damageProperty.addProperty("type", "attribute");
-        damageProperty.addProperty("attributeType", "damage");
-        damageProperty.addProperty("value", 15.0);
-        properties.add(damageProperty);
+        JsonObject statProperty = new JsonObject();
 
+        statProperty.addProperty("damage", 15);
+        statProperty.addProperty("mana", 100);
+
+        properties.add("stats", statProperty);
 
         json.add("properties", properties);
 
         // Write to file
         try (FileWriter writer = new FileWriter(exampleFile)) {
             gson.toJson(json, writer);
-            plugin.getLogger().info("Created example template: " + exampleFile.getName());
+            Bukkit.getLogger().info("Created example template: " + exampleFile.getName());
         } catch (IOException ex) {
-            plugin.getLogger().log(Level.WARNING, "Failed to create example template", ex);
+            Bukkit.getLogger().warning("Failed to create example template: " + exampleFile.getName() + " - " + ex.getMessage());
         }
     }
 }

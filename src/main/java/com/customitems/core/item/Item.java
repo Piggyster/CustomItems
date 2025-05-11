@@ -1,12 +1,12 @@
-package com.customitems.v2.item;
+package com.customitems.core.item;
 
-import com.customitems.v2.ItemPlugin;
-import com.customitems.v2.property.PersistentProperty;
-import com.customitems.v2.property.Property;
-import com.customitems.v2.property.PropertyRegistry;
+import com.customitems.core.ItemPlugin;
+import com.customitems.core.item.template.Template;
+import com.customitems.core.property.*;
 import de.tr7zw.nbtapi.NBT;
 import de.tr7zw.nbtapi.iface.ReadWriteNBT;
-import de.tr7zw.nbtapi.iface.ReadableNBT;
+import org.bukkit.ChatColor;
+import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.jetbrains.annotations.NotNull;
@@ -15,17 +15,31 @@ import org.jetbrains.annotations.Nullable;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * Represents a customitem in the game.
+ * This class is responsible for managing the properties of the item and its associated template.
+ * It also provides methods to load, save, and update the item's display.
+ *
+ * @see Template
+ * @see Property
+ */
+
 public class Item {
 
     private Template template;
     private ItemStack owner;
     private Map<Class<? extends Property>, Property> properties;
 
-    public Item(@NotNull ItemTemplate template) {
+    public static Item of(ItemStack itemStack) {
+        ItemManager itemManager = ItemPlugin.get().getItemManager();
+        return itemManager.getItem(itemStack);
+    }
+
+    public Item(@NotNull Template template) {
         this(template.createItemStack(), template);
     }
 
-    public Item(@NotNull ItemStack owner, @NotNull ItemTemplate template) {
+    public Item(@NotNull ItemStack owner, @NotNull Template template) {
         Objects.requireNonNull(owner);
         Objects.requireNonNull(template);
         this.owner = owner;
@@ -39,6 +53,12 @@ public class Item {
         }
     }
 
+
+    /**
+     * Marks the item with the template identifier.
+     *
+     * @return true if the item was marked, false if it was already marked
+     */
     private boolean mark() {
         if(template.isVanilla()) return false;
         return NBT.modify(owner, nbt -> {
@@ -51,6 +71,11 @@ public class Item {
         });
     }
 
+
+    /**
+     * Loads an item's properties from NBT data as well as
+     * the default properties from the template.
+     */
     public void load() {
         properties.clear();
 
@@ -89,6 +114,11 @@ public class Item {
         rawProperties.forEach(this::addProperty);
     }
 
+
+    /**
+     * Saves the item's properties to NBT data.
+     * Only applies to persistent properties.
+     */
     public void save() {
         NBT.modify(owner, nbt -> {
             if(properties.isEmpty() && nbt.hasTag("properties")) {
@@ -110,13 +140,39 @@ public class Item {
         });
     }
 
+
+    /**
+     * Updates the item's display name and lore based on its properties.
+     * This method should be called when changes are made to the item's properties
+     */
     public void updateDisplay() {
         ItemMeta meta = owner.getItemMeta();
         if(meta == null) return;
         //do meta operations
+        ItemRarity rarity = template.getRarity();
 
+        meta.setDisplayName(rarity.getColor() + template.getDisplayName());
+
+        List<LoreContributor> loreContributors = properties.values().stream()
+                .filter(p -> p instanceof LoreContributor)
+                .map(p -> (LoreContributor) p)
+                .sorted(Comparator.comparingInt(LoreContributor::getLorePriority).reversed())
+                .toList();
+
+        LoreVisitor visitor = new LoreVisitor();
+
+        loreContributors.forEach(contributor -> contributor.contributeLore(visitor));
+
+        visitor.visit("");
+        visitor.visit(rarity.getColor().toString() + ChatColor.BOLD + rarity.getDisplayName().toUpperCase());
+
+        meta.setLore(visitor.getLore());
+
+        meta.addItemFlags(ItemFlag.values());
+        meta.setUnbreakable(true);
 
         owner.setItemMeta(meta);
+        owner.setType(template.getMaterial());
     }
 
     public boolean addProperty(@NotNull Property property) {

@@ -2,47 +2,47 @@ package com.customitems.core.property.impl;
 
 import com.customitems.core.property.AbstractProperty;
 import com.customitems.core.property.PersistentProperty;
+import com.customitems.core.property.PropertyPriority;
 import de.tr7zw.nbtapi.iface.ReadWriteNBT;
+import de.tr7zw.nbtapi.iface.ReadableNBT;
 
 import java.util.UUID;
 
 public class UniqueProperty extends AbstractProperty implements PersistentProperty {
 
     private UUID uuid;
+    private long timestamp;
+
+    //TODO source of item
 
     public UniqueProperty() {
-        uuid = UUID.randomUUID();
+
     }
 
-    public UniqueProperty(UUID uuid) {
+    public UniqueProperty(UUID uuid, long timestamp) {
         this.uuid = uuid;
-    }
-
-    public UUID getUUID() {
-        return uuid;
+        this.timestamp = timestamp;
     }
 
     @Override
-    public boolean loadData(ReadWriteNBT nbt) {
+    public void load(ReadableNBT nbt) {
         uuid = nbt.getUUID("uuid");
-        if(uuid == null) {
-            uuid = UUID.randomUUID();
-            saveData(nbt);
-        }
-        return true;
+        timestamp = nbt.getLong("timestamp");
     }
 
     @Override
-    public boolean saveData(ReadWriteNBT nbt) {
-        if(uuid == null) {
-            uuid = UUID.randomUUID();
-        }
+    public void save(ReadWriteNBT nbt) {
         nbt.setUUID("uuid", uuid);
-        return false;
+        nbt.setLong("timestamp", timestamp);
     }
 
     @Override
     public String getType() {
-        return "unique";
+        return "uuid";
+    }
+
+    @Override
+    public PropertyPriority getPriority() {
+        return PropertyPriority.MASTER;
     }
 }

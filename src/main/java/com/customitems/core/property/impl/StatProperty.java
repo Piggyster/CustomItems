@@ -1,33 +1,42 @@
 package com.customitems.core.property.impl;
 
-import com.customitems.core.property.AbstractProperty;
-import com.customitems.core.property.LoreContributor;
-import com.customitems.core.stat.StatType;
+import com.customitems.core.property.*;
 import com.google.common.collect.ImmutableMap;
-import org.bukkit.ChatColor;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
-public class StatProperty extends AbstractProperty implements LoreContributor {
+public class StatProperty extends AbstractProperty implements LoreContributor, ModifiableProperty<StatModification> {
 
     private final Map<StatType, Integer> stats;
+    private final Map<StatType, StatModification> modifications;
 
     public StatProperty(Map<StatType, Integer> stats) {
-        super();
         this.stats = stats;
+        modifications = new HashMap<>();
     }
 
-    public int getValue(StatType type) {
+    public int getStat(StatType type) {
         return stats.getOrDefault(type, 0);
+    }
+
+    public void setStat(StatType type, int value) {
+        stats.put(type, value);
     }
 
     public Map<StatType, Integer> getStats() {
         return ImmutableMap.copyOf(stats);
     }
 
+    @Override
+    public String getType() {
+        return "stats";
+    }
+
+    @Override
+    public PropertyPriority getPriority() {
+        return PropertyPriority.MASTER;
+    }
 
     @Override
     public int getLorePriority() {
@@ -35,16 +44,21 @@ public class StatProperty extends AbstractProperty implements LoreContributor {
     }
 
     @Override
-    public List<String> contributeLore() {
-        List<String> lore = new ArrayList<>();
-        stats.forEach((stat, value) -> {
-            lore.add(stat.getColor() + stat.getDisplayName() + ChatColor.WHITE + ": " + value);
-        });
-        return lore;
+    public void contributeLore(LoreVisitor visitor) {
+        for(StatType type : stats.keySet()) {
+            visitor.visit(formatStatLine(type));
+        }
+    }
+    //TODO figure out a way to track if a value is effective or modified.
+
+    private String formatStatLine(StatType type) {
+        return "";
     }
 
     @Override
-    public String getType() {
-        return "stats";
+    public void modify(StatModification mod) {
+        modifications.put(mod.type(), mod);
+        //TODO operations functions
     }
+
 }

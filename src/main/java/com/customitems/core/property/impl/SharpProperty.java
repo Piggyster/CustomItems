@@ -1,10 +1,10 @@
-package com.customitems.v2.property.impl;
+package com.customitems.core.property.impl;
 
-import com.customitems.v2.item.Item;
-import com.customitems.v2.property.AbstractProperty;
-import com.customitems.v2.property.PersistentProperty;
-import com.customitems.v2.property.PropertyModification;
-import com.customitems.v2.property.PropertyPriority;
+import com.customitems.core.item.Item;
+import com.customitems.core.property.AbstractProperty;
+import com.customitems.core.property.PersistentProperty;
+import com.customitems.core.property.PropertyModification;
+import com.customitems.core.property.PropertyPriority;
 import de.tr7zw.nbtapi.iface.ReadWriteNBT;
 import de.tr7zw.nbtapi.iface.ReadableNBT;
 

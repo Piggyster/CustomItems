@@ -1,11 +1,18 @@
-package com.customitems.v2.item;
+package com.customitems.core.item.template;
 
-import com.customitems.v2.property.Property;
+import com.customitems.core.item.ItemRarity;
+import com.customitems.core.property.Property;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Set;
+
+/**
+ * Represents a vanilla item template.
+ * This class is used to create item stacks of vanilla items.
+ * It's lightweight and does not require any additional data.
+ */
 
 public class VanillaTemplate implements Template {
 

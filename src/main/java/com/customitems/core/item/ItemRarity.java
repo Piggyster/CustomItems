@@ -3,27 +3,32 @@ package com.customitems.core.item;
 import org.bukkit.ChatColor;
 
 public enum ItemRarity {
-
     COMMON("Common", ChatColor.WHITE),
-    UNCOMMON("Uncommon", ChatColor.GREEN),
     RARE("Rare", ChatColor.BLUE),
-    EPIC("Epic", ChatColor.DARK_PURPLE),
     LEGENDARY("Legendary", ChatColor.GOLD);
 
-    private final String display;
+    private final String displayName;
     private final ChatColor color;
 
-    ItemRarity(String display, ChatColor color) {
-        this.display = display;
+    ItemRarity(String displayName, ChatColor color) {
+        this.displayName = displayName;
         this.color = color;
     }
 
-
-    public String getDisplay() {
-        return display;
+    public String getDisplayName() {
+        return displayName;
     }
 
     public ChatColor getColor() {
         return color;
+    }
+
+    public static ItemRarity fromString(String rarity) {
+        for (ItemRarity itemRarity : values()) {
+            if (itemRarity.name().equalsIgnoreCase(rarity)) {
+                return itemRarity;
+            }
+        }
+        return null;
     }
 }

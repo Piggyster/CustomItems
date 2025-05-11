@@ -1,10 +1,14 @@
 package com.customitems.core.property;
 
-import java.util.List;
+/**
+ * Interface for classes that can contribute lore to an item.
+ * This is used to add custom lore to items in the game.
+ */
 
 public interface LoreContributor {
 
     int getLorePriority();
 
-    List<String> contributeLore();
+    void contributeLore(LoreVisitor visitor);
+
 }

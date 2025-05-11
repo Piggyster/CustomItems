@@ -1,4 +1,4 @@
-package com.customitems.v2.property.impl;
+package com.customitems.core.property.impl;
 
 public enum StatType {
     DAMAGE,

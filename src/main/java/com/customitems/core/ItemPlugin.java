@@ -1,31 +1,41 @@
-package com.customitems.v2;
+package com.customitems.core;
 
-import com.customitems.v2.property.PropertyRegistry;
-import com.customitems.v2.property.impl.SharpProperty;
-import com.customitems.v2.property.impl.StatProperty;
-import com.customitems.v2.property.impl.StatType;
-import com.customitems.v2.property.impl.UniqueProperty;
-import com.google.gson.JsonObject;
+import com.customitems.core.item.ItemManager;
+import com.customitems.core.property.PropertyRegistry;
+import com.customitems.core.property.impl.SharpProperty;
+import com.customitems.core.property.impl.StatProperty;
+import com.customitems.core.property.impl.StatType;
+import com.customitems.core.property.impl.UniqueProperty;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * CustomItems Plugin
+ * A sophisticated wrapper system for all ItemStacks
+ * to provide a expandable plug and play system
+ * using Property objects and Template objects
+ *
+ * @author Piggyster
+ */
+
 public class ItemPlugin extends JavaPlugin {
 
     private static ItemPlugin instance;
     private PropertyRegistry registry;
+    private ItemManager itemManager;
 
     @Override
     public void onEnable() {
         instance = this;
         registry = new PropertyRegistry();
+        itemManager = new ItemManager();
 
         registry.register(
                 StatProperty.class,
                 "stats",
                 json -> {
-                    json = json.getAsJsonObject("Stats");
                     Map<StatType, Integer> stats = new HashMap<>();
                     for(String statType : json.keySet()) {
                         StatType type = StatType.valueOf(statType.toUpperCase());
@@ -64,5 +74,9 @@ public class ItemPlugin extends JavaPlugin {
 
     public PropertyRegistry getRegistry() {
         return registry;
+    }
+
+    public ItemManager getItemManager() {
+        return itemManager;
     }
 }

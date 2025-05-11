@@ -1,50 +1,66 @@
 package com.customitems.core.property;
 
 import com.google.gson.JsonObject;
-import de.tr7zw.nbtapi.iface.ReadWriteNBT;
-import org.bukkit.NamespacedKey;
-import org.bukkit.persistence.PersistentDataContainer;
+import de.tr7zw.nbtapi.iface.ReadableNBT;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
+/**
+ * Registry for properties.
+ * <p>
+ * This class is responsible for registering and retrieving properties based on their identifiers.
+ * It supports both JSON and NBT formats for property creation.
+ */
+
 public class PropertyRegistry {
 
-    private static final Map<String, Function<ReadWriteNBT, Property>> nbtFactories = new ConcurrentHashMap<>();
-    private static final Map<String, Function<JsonObject, Property>> jsonFactories = new ConcurrentHashMap<>();
+    private final Map<String, Class<? extends Property>> identifiers;
+    private final Map<Class<? extends Property>, Function<JsonObject, Property>> jsonFactories;
+    private final Map<Class<? extends Property>, Function<ReadableNBT, Property>> nbtFactories;
 
-
-    public static void registerNbt(String propertyType, Function<ReadWriteNBT, Property> factory) {
-        nbtFactories.put(propertyType, factory);
+    public PropertyRegistry() {
+        identifiers = new ConcurrentHashMap<>();
+        jsonFactories = new ConcurrentHashMap<>();
+        nbtFactories = new ConcurrentHashMap<>();
     }
 
-    public static void registerJson(String propertyType, Function<JsonObject, Property> factory) {
-        jsonFactories.put(propertyType, factory);
-    }
-
-    public static Property fromNbt(String propertyType, ReadWriteNBT nbt) {
-        Function<ReadWriteNBT, Property> factory = nbtFactories.get(propertyType);
-        if (factory == null) {
-            return null;
+    public void register(@NotNull Class<? extends Property> clazz, @NotNull String identifier,
+                         @Nullable Function<JsonObject, Property> jsonFunction,
+                         @Nullable Function<ReadableNBT, Property> nbtFunction) {
+        identifiers.put(identifier.toLowerCase(), clazz);
+        if(jsonFunction != null) {
+            jsonFactories.put(clazz, jsonFunction);
         }
-        return factory.apply(nbt);
-    }
-
-    public static Property fromJson(String propertyType, JsonObject json) {
-        Function<JsonObject, Property> factory = jsonFactories.get(propertyType);
-        if (factory == null) {
-            return null;
+        if(nbtFunction != null) {
+            nbtFactories.put(clazz, nbtFunction); //TODO strengthen these checks
         }
-        return factory.apply(json);
     }
 
-    public static boolean hasJsonFactory(String propertyType) {
-        return jsonFactories.containsKey(propertyType);
+    public @Nullable Property fromJson(Class<? extends Property> clazz, JsonObject json) {
+        Function<JsonObject, Property> function = jsonFactories.get(clazz);
+        if(function == null) return null;
+        return function.apply(json);
     }
 
-    public static boolean hasNbtFactory(String propertyType) {
-        return nbtFactories.containsKey(propertyType);
+    public @Nullable Property fromNbt(Class<? extends Property> clazz, ReadableNBT nbt) {
+        Function<ReadableNBT, Property> function = nbtFactories.get(clazz);
+        if(function == null) return null;
+        return function.apply(nbt);
+    }
+
+    public boolean hasJsonFactory(Class<? extends Property> clazz) {
+        return jsonFactories.containsKey(clazz);
+    }
+
+    public boolean hasNbtFactory(Class<? extends Property> clazz) {
+        return nbtFactories.containsKey(clazz);
+    }
+
+    public @Nullable Class<? extends Property> getClass(String identifer) {
+        return identifiers.get(identifer.toLowerCase());
     }
 }
