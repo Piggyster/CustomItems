@@ -1,15 +1,24 @@
 package com.customitems.core;
 
+import com.customitems.core.ability.AbilityProperty;
+import com.customitems.core.ability.AbilityRegistry;
+import com.customitems.core.ability.impl.TeleportAbility;
+import com.customitems.core.command.GiveCommand;
+import com.customitems.core.command.PropertyCommand;
+import com.customitems.core.command.StatCommand;
 import com.customitems.core.item.ItemManager;
+import com.customitems.core.property.PropertyListener;
 import com.customitems.core.property.PropertyRegistry;
-import com.customitems.core.property.impl.SharpProperty;
+import com.customitems.core.property.impl.PouchProperty;
 import com.customitems.core.property.impl.StatProperty;
-import com.customitems.core.property.impl.StatType;
+import com.customitems.core.service.Services;
+import com.customitems.core.stat.StatListener;
+import com.customitems.core.stat.StatStorage;
 import com.customitems.core.property.impl.UniqueProperty;
+import com.customitems.core.test.TestListener;
+import org.bukkit.Bukkit;
+import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
-
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * CustomItems Plugin
@@ -23,48 +32,50 @@ import java.util.Map;
 public class ItemPlugin extends JavaPlugin {
 
     private static ItemPlugin instance;
-    private PropertyRegistry registry;
-    private ItemManager itemManager;
 
     @Override
     public void onEnable() {
         instance = this;
-        registry = new PropertyRegistry();
-        itemManager = new ItemManager();
 
-        registry.register(
-                StatProperty.class,
-                "stats",
-                json -> {
-                    Map<StatType, Integer> stats = new HashMap<>();
-                    for(String statType : json.keySet()) {
-                        StatType type = StatType.valueOf(statType.toUpperCase());
-                        int value = json.getAsJsonObject(statType).getAsInt();
-                        stats.put(type, value);
-                    }
-                    return new StatProperty(stats);
-                }, null);
+        Services.register(AbilityRegistry.class, new AbilityRegistry());
+        registerAbilities();
+        Services.register(PropertyRegistry.class, new PropertyRegistry());
+        registerProperties();
+        Services.register(ItemManager.class, new ItemManager());
+        Services.register(StatStorage.class, new StatStorage());
 
-        //TODO solution for loose properties
-        //TODO maybe a LooseProperty extension
-        //these are properties that are defined to exist, maybe hold their own nbt value
-        //but they're loaded from templates with json, and then init with the nbt
-        //these are properties who are both json AND nbt
-        //properties that aren't like this are regular, solid properties that handle their
-        //loading at registry time, instead of at init time
-        registry.register(
-                SharpProperty.class,
-                "sharp",
-                json -> new SharpProperty(),
-                nbt -> new SharpProperty()
-        );
 
-        registry.register(
-                UniqueProperty.class,
-                "uuid",
-                json -> new UniqueProperty(),
-                nbt -> new UniqueProperty()
-        );
+        registerEvents();
+
+        getCommand("property").setExecutor(new PropertyCommand());
+        getCommand("stat").setExecutor(new StatCommand());
+
+        GiveCommand giveCommand = new GiveCommand();
+
+        getCommand("give").setExecutor(giveCommand);
+        getCommand("give").setTabCompleter(giveCommand);
+
+    }
+
+    private void registerEvents() {
+        StatStorage storage = Services.get(StatStorage.class);
+        PluginManager pluginManager = getServer().getPluginManager();
+        pluginManager.registerEvents(new StatListener(storage), this);
+        //pluginManager.registerEvents(new TestListener(), this);
+        pluginManager.registerEvents(new PropertyListener(), this);
+    }
+
+    private void registerProperties() {
+        PropertyRegistry registry = Services.get(PropertyRegistry.class);
+        registry.register(StatProperty.TYPE);
+        registry.register(PouchProperty.TYPE);
+        registry.register(UniqueProperty.TYPE);
+        registry.register(AbilityProperty.TYPE);
+    }
+
+    private void registerAbilities() {
+        AbilityRegistry registry = Services.get(AbilityRegistry.class);
+        registry.register(new TeleportAbility());
     }
 
 
@@ -72,11 +83,4 @@ public class ItemPlugin extends JavaPlugin {
         return instance;
     }
 
-    public PropertyRegistry getRegistry() {
-        return registry;
-    }
-
-    public ItemManager getItemManager() {
-        return itemManager;
-    }
 }

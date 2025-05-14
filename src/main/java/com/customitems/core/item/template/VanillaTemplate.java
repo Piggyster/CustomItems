@@ -17,9 +17,11 @@ import java.util.Set;
 public class VanillaTemplate implements Template {
 
     private final Material material;
+    private final String displayName;
 
     public VanillaTemplate(@NotNull Material material) {
         this.material = material;
+        displayName = capitalizeWords(material.toString());
     }
 
     @Override
@@ -34,7 +36,7 @@ public class VanillaTemplate implements Template {
 
     @Override
     public String getDisplayName() {
-        return material.toString();
+        return displayName;
     }
 
     @Override
@@ -55,5 +57,26 @@ public class VanillaTemplate implements Template {
     @Override
     public boolean isVanilla() {
         return true;
+    }
+
+    private static String capitalizeWords(String input) {
+        if (input == null || input.isEmpty()) return input;
+
+        input = input.replace("_", " ");
+
+        StringBuilder out = new StringBuilder(input.length());
+        boolean capNext = true;
+
+        for (char ch : input.toCharArray()) {
+            if (Character.isWhitespace(ch)) {
+                capNext = true;
+                out.append(ch);
+            } else {
+                out.append(capNext ? Character.toUpperCase(ch)
+                        : Character.toLowerCase(ch));
+                capNext = false;
+            }
+        }
+        return out.toString();
     }
 }

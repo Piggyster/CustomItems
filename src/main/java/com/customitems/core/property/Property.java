@@ -13,7 +13,7 @@ public interface Property {
 
     void init(Item item);
 
-    String getType();
+    PropertyType<? extends Property> getType();
 
     Item getItem();
 

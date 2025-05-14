@@ -3,15 +3,24 @@ package com.customitems.core.item;
 import com.customitems.core.ItemPlugin;
 import com.customitems.core.item.template.Template;
 import com.customitems.core.property.*;
+import com.customitems.core.property.EventListener;
+import com.customitems.core.service.Services;
+import com.google.common.collect.ImmutableList;
 import de.tr7zw.nbtapi.NBT;
 import de.tr7zw.nbtapi.iface.ReadWriteNBT;
+import de.tr7zw.nbtapi.iface.ReadableNBT;
 import org.bukkit.ChatColor;
+import org.bukkit.event.Event;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -28,11 +37,17 @@ public class Item {
 
     private Template template;
     private ItemStack owner;
-    private Map<Class<? extends Property>, Property> properties;
+    private Map<PropertyType<?>, Property> properties;
+    private List<EventListener> listeners;
 
     public static Item of(ItemStack itemStack) {
-        ItemManager itemManager = ItemPlugin.get().getItemManager();
+        ItemManager itemManager = Services.get(ItemManager.class);
         return itemManager.getItem(itemStack);
+    }
+
+    public static Item of(byte[] bytes) {
+        ItemManager itemManager = Services.get(ItemManager.class);
+        return itemManager.deserialize(bytes);
     }
 
     public Item(@NotNull Template template) {
@@ -45,10 +60,11 @@ public class Item {
         this.owner = owner;
         this.template = template;
         properties = new ConcurrentHashMap<>();
+        listeners = new ArrayList<>();
 
         load();
 
-        if(mark()) {
+        if(mark() || !owner.hasItemMeta()) {
             updateDisplay();
         }
     }
@@ -71,6 +87,22 @@ public class Item {
         });
     }
 
+    @SuppressWarnings("unchecked")
+    public <T extends Event> void handleEvent(T event) {
+        for(EventListener listener : listeners) {
+            if(listener.getEvents().contains(event.getClass())) {
+                listener.handle(event);
+            }
+        }
+    }
+
+    /**
+     *
+     */
+    public void bind(@NotNull ItemStack stack) {
+        owner = stack;
+    }
+
 
     /**
      * Loads an item's properties from NBT data as well as
@@ -79,39 +111,53 @@ public class Item {
     public void load() {
         properties.clear();
 
-        List<Property> rawProperties = new ArrayList<>();
+        Map<Class<? extends Property>, Property> rawProperties = new HashMap<>();
 
         //load properties from nbt
         NBT.modify(owner, nbt -> {
-            if(!nbt.hasTag("properties")) {
-                return;
-            }
 
-            PropertyRegistry registry = ItemPlugin.get().getRegistry();
-            ReadWriteNBT propertyNbt = nbt.getCompound("properties"); //maybe we should be passing through nbt to each factory?
-            for(String propertyType : propertyNbt.getKeys()) {
-                Class<? extends Property> clazz = registry.getClass(propertyType);
-                if(clazz == null) continue;
-                Property property = registry.fromNbt(clazz, propertyNbt);
-                rawProperties.add(property);
-            }
+            ReadWriteNBT propertyNbt = nbt.hasTag("properties") ? nbt.getCompound("properties") : null;
+            PropertyRegistry registry = Services.get(PropertyRegistry.class);
 
-            for(Property property : template.getDefaultProperties()) {
-                if(property instanceof PersistentProperty persistentProperty) {
-                    persistentProperty.load(propertyNbt);
-                    rawProperties.add(persistentProperty);
-                } else {
-                    rawProperties.add(property);
+            if(propertyNbt != null) {
+                for(String id : propertyNbt.getKeys()) {
+                    Property property = registry.fromNbt(id, propertyNbt);
+                    if(property == null) continue;
+                    rawProperties.put(property.getClass(), property);
                 }
             }
 
+            for(Property property : template.getDefaultProperties()) {
+                Property existing = rawProperties.putIfAbsent(property.getClass(), property);
+                if(existing instanceof MergeableProperty mergeableProperty) {
+                    mergeableProperty.merge(property);
+                }
+            }
+
+
             if(rawProperties.isEmpty()) {
                 nbt.removeKey("properties");
+            } else if(!nbt.hasTag("properties")) {
+                propertyNbt = nbt.getOrCreateCompound("properties");
             }
-        });
 
-        rawProperties.sort(Comparator.comparingInt(p -> p.getPriority().ordinal())); //TODO
-        rawProperties.forEach(this::addProperty);
+
+            //rawProperties.sort(Comparator.comparingInt(p -> p.getPriority().ordinal())); //TODO
+            boolean dirty = false; //might need to be outside lambda and be atomic
+
+            for(Map.Entry<Class<? extends Property>, Property> entry : rawProperties.entrySet()) {
+                Property property = entry.getValue();
+                addProperty(property);
+                if(property instanceof PersistentProperty persistentProperty) {
+                    dirty = persistentProperty.load(propertyNbt);
+                }
+            }
+
+            if(dirty) save();
+
+
+        });
+        //rawProperties.forEach(this::addProperty);
     }
 
 
@@ -176,17 +222,21 @@ public class Item {
     }
 
     public boolean addProperty(@NotNull Property property) {
-        Class<? extends Property> clazz = property.getClass();
-        if(hasProperty(clazz)) {
+        PropertyType<? extends Property> type = property.getType();
+        if(hasProperty(type)) {
             return false;
         }
-        properties.put(clazz, property);
+        properties.put(type, property);
         property.init(this);
+
+        if(property instanceof EventListener listener) {
+            listeners.add(listener);
+        }
         return true;
     }
 
-    public boolean hasProperty(Class<? extends Property> clazz) {
-        return properties.containsKey(clazz);
+    public boolean hasProperty(PropertyType<? extends Property> type) {
+        return properties.containsKey(type);
     }
 
     public boolean hasProperty(Property property) {
@@ -195,11 +245,46 @@ public class Item {
 
     @SuppressWarnings("unchecked")
     @Nullable
-    public <T extends Property> T getProperty(Class<? extends T> clazz) {
-        return (T) properties.get(clazz);
+    public <T extends Property> T getProperty(@NotNull PropertyType<? extends T> type) {
+        return (T) properties.get(type);
     }
 
-    public void removeProperty(Class<? extends Property> clazz) {
-        properties.remove(clazz);
+    public List<Property> getProperties() {
+        return ImmutableList.copyOf(properties.values());
+    }
+
+    public void removeProperty(String type) {
+        properties.remove(type);
+    }
+
+    public Template getTemplate() {
+        return template;
+    }
+
+    public ItemStack getStack() {
+        return owner;
+    }
+
+    public byte[] serialize() {
+        try(ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            DataOutputStream out = new DataOutputStream(baos);) {
+
+            String templateId = template.getId();
+            byte[] persistentData = NBT.get(owner, nbt -> {
+                if(nbt.hasTag("properties")) {
+                    ReadableNBT propertyNbt = nbt.getCompound("properties");
+                    return propertyNbt.toString().getBytes(StandardCharsets.UTF_8);
+                } else {
+                    return new byte[0];
+                }
+            });
+            out.writeUTF(templateId);
+            out.writeInt(persistentData.length);
+            out.write(persistentData);
+            return baos.toByteArray();
+        } catch(IOException ex) {
+            ex.printStackTrace();
+        }
+        return new byte[0];
     }
 }

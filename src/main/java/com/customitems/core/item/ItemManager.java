@@ -2,29 +2,40 @@ package com.customitems.core.item;
 
 import com.customitems.core.ItemPlugin;
 import com.customitems.core.item.template.Template;
-import com.customitems.core.item.template.TemplateLoader;
+import com.customitems.core.item.template.loader.DefaultLoader;
 import com.customitems.core.item.template.VanillaTemplate;
+import com.customitems.core.item.template.loader.TemplateLoader;
+import com.customitems.core.service.Services;
+import com.google.common.collect.ImmutableList;
 import de.tr7zw.nbtapi.NBT;
+import de.tr7zw.nbtapi.iface.ReadWriteNBT;
+import de.tr7zw.nbtapi.iface.ReadableNBT;
+import org.bukkit.Bukkit;
 import org.bukkit.inventory.ItemStack;
 
+import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
 import java.io.File;
-import java.util.Map;
-import java.util.WeakHashMap;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class ItemManager {
 
     private final Map<String, Template> templates;
 
-    private final Map<ItemStack, Item> cache;
+    private final Map<UUID, Item> strongCache;
+    private final Map<ItemStack, Item> weakCache;
 
     public ItemManager() {
         templates = new ConcurrentHashMap<>();
-        cache = new WeakHashMap<>();
+        strongCache = new ConcurrentHashMap<>();
+        weakCache = new WeakHashMap<>();
 
         ItemPlugin plugin = ItemPlugin.get();
 
-        TemplateLoader loader = new TemplateLoader(new File(plugin.getDataFolder(), "templates"));
+        DefaultLoader loader = new DefaultLoader(new File(plugin.getDataFolder(), "templates"));
         loader.loadAllTemplates().forEach(this::registerTemplate);
     }
 
@@ -36,15 +47,42 @@ public class ItemManager {
         return templates.get(id);
     }
 
-    public Item getItem(ItemStack itemStack) {
-        return cache.computeIfAbsent(itemStack, stack -> {
+    public List<Template> getTemplates() {
+        return ImmutableList.copyOf(templates.values());
+    }
 
-            Template template = extractTemplate(stack);
-
-            if (template != null) {
+    //TODO more improvements
+    public Item getItem(ItemStack stack) {
+        Bukkit.getLogger().warning("Fetching item: " + stack);
+        Template template = extractTemplate(stack);
+        if(template.isVanilla()) {
+            Bukkit.getLogger().warning("Item was vanilla");
+            return new Item(stack, template);
+        }
+        UUID uuid = extractUUID(stack);
+        if(uuid != null) {
+            Bukkit.getLogger().warning("Item has UUID");
+            Item item = strongCache.computeIfAbsent(uuid, id -> {
+                Bukkit.getLogger().warning("Item was not in cache");
                 return new Item(stack, template);
-            }
-            return null;
+            });
+            item.bind(stack);
+            return item;
+        } else {
+            Bukkit.getLogger().warning("Item does not have UUID");
+            return weakCache.computeIfAbsent(stack, s -> {
+                Bukkit.getLogger().warning("Item was not in cache");
+                return new Item(stack, template);
+            });
+        }
+    }
+
+    public UUID extractUUID(ItemStack itemStack) {
+        return NBT.get(itemStack, nbt -> {
+            if(!nbt.hasTag("properties")) return null;
+            ReadableNBT propertyNbt = nbt.getCompound("properties");
+            if(!propertyNbt.hasTag("uuid")) return null;
+            return propertyNbt.getUUID("uuid");
         });
     }
 
@@ -61,5 +99,31 @@ public class ItemManager {
         } else {
             return getTemplate(id);
         }
+    }
+
+    public Item deserialize(byte[] bytes) {
+        ItemManager itemManager = Services.get(ItemManager.class);
+        try(DataInputStream in = new DataInputStream(new ByteArrayInputStream(bytes))) {
+            while(in.available() > 0) {
+                String templateId = in.readUTF();
+                int persistentDataLength = in.readInt();
+                byte[] persistentData = in.readNBytes(persistentDataLength);
+
+                Template template = itemManager.getTemplate(templateId);
+                if(template == null) return null;
+
+                ItemStack stack = template.createItemStack();
+                if(persistentDataLength > 0) {
+                    NBT.modify(stack, nbt -> {
+                        ReadWriteNBT propertyNbt = nbt.getOrCreateCompound("properties");
+                        propertyNbt.mergeCompound(NBT.parseNBT(new String(persistentData, StandardCharsets.UTF_8)));
+                    });
+                }
+                return new Item(stack, template);
+            }
+        } catch(IOException ex) {
+            ex.printStackTrace();
+        }
+        return null;
     }
 }

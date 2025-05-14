@@ -1,7 +1,9 @@
-package com.customitems.core.item.template;
+package com.customitems.core.item.template.loader;
 
 import com.customitems.core.ItemPlugin;
 import com.customitems.core.item.ItemRarity;
+import com.customitems.core.item.template.ItemTemplate;
+import com.customitems.core.item.template.Template;
 import com.customitems.core.property.Property;
 import com.customitems.core.property.PropertyRegistry;
 import com.google.gson.*;
@@ -14,35 +16,19 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * TemplateLoader is responsible for loading item templates from a specified directory.
  * It creates the directory if it does not exist.
  */
 
-public class TemplateLoader {
+public class DefaultLoader extends AbstractLoader {
 
-    protected final File directory;
-    protected final PropertyRegistry registry;
-    protected final Gson gson;
-
-
-    public TemplateLoader(@NotNull File directory) {
-        this.directory = directory;
-        registry = ItemPlugin.get().getRegistry();
-        gson = new GsonBuilder().setPrettyPrinting().create();
-
-        if(!directory.exists()) {
-            directory.mkdirs();
-            createExampleTemplate();
-        }
+    public DefaultLoader(@NotNull File directory) {
+        super(directory);
     }
 
     public List<Template> loadAllTemplates() {
@@ -66,28 +52,9 @@ public class TemplateLoader {
         return templates;
     }
 
-    protected List<File> listJsonFiles(File dir) throws IOException {
-        try (Stream<Path> stream = Files.walk(dir.toPath(), 1)) {
-            return stream
-                    .filter(path -> !path.equals(dir.toPath()))
-                    .filter(path -> path.toString().endsWith(".json"))
-                    .map(Path::toFile)
-                    .collect(Collectors.toList());
-        }
-    }
 
-    private Supplier<Property> createPropertySupplier(String type, JsonObject json) {
-        Class<? extends Property> clazz = registry.getClass(type);
-
-        if(clazz == null || !registry.hasJsonFactory(clazz)) {
-            Bukkit.getLogger().warning("Unknown property type: " + type);
-            return null;
-        }
-
-        return () -> registry.fromJson(clazz, json);
-    }
-
-    protected Template loadTemplate(File file) {
+    @Override
+    public Template loadTemplate(File file) {
         try (FileReader reader = new FileReader(file)) {
             JsonObject json = JsonParser.parseReader(reader).getAsJsonObject();
 
@@ -121,7 +88,7 @@ public class TemplateLoader {
             if (json.has("properties")) {
                 JsonObject propertiesJson = json.getAsJsonObject("properties");
                 for(String key : propertiesJson.keySet()) {
-                    JsonObject propertyJson = propertiesJson.getAsJsonObject(key);
+                    JsonElement propertyJson = propertiesJson.get(key);
 
                     Supplier<Property> propertySupplier = createPropertySupplier(key, propertyJson);
                     if(propertySupplier != null) {
@@ -137,7 +104,8 @@ public class TemplateLoader {
         }
     }
 
-    protected void createExampleTemplate() {
+    @Override
+    public void createExampleTemplate() {
         File exampleFile = new File(directory, "exotic_sword.json");
 
         JsonObject json = new JsonObject();

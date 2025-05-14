@@ -1,14 +1,21 @@
 package com.customitems.core.property.impl;
 
-import com.customitems.core.property.AbstractProperty;
-import com.customitems.core.property.PersistentProperty;
-import com.customitems.core.property.PropertyPriority;
+import com.customitems.core.property.*;
 import de.tr7zw.nbtapi.iface.ReadWriteNBT;
 import de.tr7zw.nbtapi.iface.ReadableNBT;
 
 import java.util.UUID;
 
-public class UniqueProperty extends AbstractProperty implements PersistentProperty {
+public class UniqueProperty extends AbstractProperty implements PersistentProperty, LoreContributor {
+
+    public final static PropertyType<UniqueProperty> TYPE = PropertyType.of(UniqueProperty.class, "uuid")
+            .json(json -> new UniqueProperty())
+            .nbt(nbt -> {
+                UniqueProperty property = new UniqueProperty();
+                property.load(nbt);
+                return property;
+            })
+            .build();
 
     private UUID uuid;
     private long timestamp;
@@ -24,10 +31,21 @@ public class UniqueProperty extends AbstractProperty implements PersistentProper
         this.timestamp = timestamp;
     }
 
+    public UUID getUuid() {
+        return uuid;
+    }
+
     @Override
-    public void load(ReadableNBT nbt) {
-        uuid = nbt.getUUID("uuid");
-        timestamp = nbt.getLong("timestamp");
+    public boolean load(ReadableNBT nbt) {
+        if(!nbt.hasTag("uuid")) {
+            uuid = UUID.randomUUID();
+            timestamp = System.currentTimeMillis();
+            return true;
+        } else {
+            uuid = nbt.getUUID("uuid");
+            timestamp = nbt.getLong("timestamp");
+            return false;
+        }
     }
 
     @Override
@@ -37,12 +55,22 @@ public class UniqueProperty extends AbstractProperty implements PersistentProper
     }
 
     @Override
-    public String getType() {
-        return "uuid";
+    public PropertyType<UniqueProperty> getType() {
+        return TYPE;
     }
 
     @Override
     public PropertyPriority getPriority() {
         return PropertyPriority.MASTER;
+    }
+
+    @Override
+    public int getLorePriority() {
+        return 1;
+    }
+
+    @Override
+    public void contributeLore(LoreVisitor visitor) {
+        visitor.visit("&8" + uuid.toString());
     }
 }

@@ -13,7 +13,7 @@ repositories {
 }
 
 dependencies {
-    implementation 'com.google.code.gson:gson:2.10.1'
+    //implementation 'com.google.code.gson:gson:2.10.1'
     compileOnly 'org.spigotmc:spigot-api:1.21.4-R0.1-SNAPSHOT'
     compileOnly 'de.tr7zw:item-nbt-api-plugin:2.14.1'
     compileOnly 'com.comphenix.protocol:ProtocolLib:5.1.0'

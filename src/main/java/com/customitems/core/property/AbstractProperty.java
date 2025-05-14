@@ -25,4 +25,11 @@ public abstract class AbstractProperty implements Property {
     public Item getItem() {
         return item;
     }
+
+    @Override
+    public String toString() {
+        return "Property{" +
+                "type='" + getType() + '\'' +
+                '}';
+    }
 }
