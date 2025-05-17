@@ -10,7 +10,7 @@ import com.google.gson.JsonObject;
 import java.util.HashMap;
 import java.util.Map;
 
-public class StatProperty extends AbstractProperty implements LoreContributor, ModifiableProperty<StatModification>, StatProvider {
+public class StatProperty extends AbstractProperty implements LoreContributor, StatProvider {
 
     public static final PropertyType<StatProperty> TYPE = PropertyType.of(StatProperty.class, "stats")
             .json(json -> {
@@ -26,11 +26,9 @@ public class StatProperty extends AbstractProperty implements LoreContributor, M
             }).build();
 
     private final Map<StatType, Double> stats;
-    private final Map<StatType, StatModification> modifications;
 
     public StatProperty(Map<StatType, Double> stats) {
         this.stats = stats;
-        modifications = new HashMap<>();
     }
 
     public double getStat(StatType type) {
@@ -43,7 +41,6 @@ public class StatProperty extends AbstractProperty implements LoreContributor, M
     }
     */
 
-
     public Map<StatType, Double> getStats() {
         return ImmutableMap.copyOf(stats);
     }
@@ -51,11 +48,6 @@ public class StatProperty extends AbstractProperty implements LoreContributor, M
     @Override
     public PropertyType<StatProperty> getType() {
         return TYPE;
-    }
-
-    @Override
-    public PropertyPriority getPriority() {
-        return PropertyPriority.MASTER;
     }
 
     @Override
@@ -75,12 +67,6 @@ public class StatProperty extends AbstractProperty implements LoreContributor, M
 
     private String formatStatLine(StatType type, double value) {
         return "&e" + type + ": &f" + value;
-    }
-
-    @Override
-    public void modify(StatModification mod) {
-        modifications.put(mod.type(), mod);
-        //TODO operations functions
     }
 
     @Override

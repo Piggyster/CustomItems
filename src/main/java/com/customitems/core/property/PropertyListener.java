@@ -4,6 +4,7 @@ import com.customitems.core.item.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerToggleSneakEvent;
@@ -33,6 +34,16 @@ public class PropertyListener implements Listener {
         if(!(event.getPlayer() instanceof Player player)) return;
         ItemStack stack = event.getPlayer().getInventory().getItemInMainHand();
         if(stack.getType().isAir()) return;
+        Item item = Item.of(stack);
+        if(item == null || item.getTemplate().isVanilla()) return;
+        item.handleEvent(event);
+    }
+
+    @EventHandler
+    public void onEvent(InventoryClickEvent event) {
+        if(!(event.getWhoClicked() instanceof Player player)) return;
+        ItemStack stack = event.getCurrentItem();
+        if(stack == null || stack.getType().isAir()) return;
         Item item = Item.of(stack);
         if(item == null || item.getTemplate().isVanilla()) return;
         item.handleEvent(event);

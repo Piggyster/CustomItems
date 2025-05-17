@@ -17,6 +17,4 @@ public interface Property {
 
     Item getItem();
 
-    PropertyPriority getPriority();
-
 }

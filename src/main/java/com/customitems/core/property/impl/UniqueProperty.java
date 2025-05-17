@@ -59,10 +59,6 @@ public class UniqueProperty extends AbstractProperty implements PersistentProper
         return TYPE;
     }
 
-    @Override
-    public PropertyPriority getPriority() {
-        return PropertyPriority.MASTER;
-    }
 
     @Override
     public int getLorePriority() {

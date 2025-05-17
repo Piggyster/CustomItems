@@ -20,7 +20,6 @@ public class AbilityProperty extends AbstractProperty implements EventListener, 
     public static final PropertyType<AbilityProperty> TYPE = PropertyType.of(AbilityProperty.class, "ability")
             .json(json -> {
                 AbilityRegistry registry = Services.get(AbilityRegistry.class);
-                Bukkit.getLogger().severe(json.toString());
                 Set<Ability> abilities = new HashSet<>();
                 JsonArray array = json.getAsJsonArray();
                 for(JsonElement element : array) {
@@ -72,11 +71,6 @@ public class AbilityProperty extends AbstractProperty implements EventListener, 
     @Override
     public PropertyType<? extends Property> getType() {
         return TYPE;
-    }
-
-    @Override
-    public PropertyPriority getPriority() {
-        return PropertyPriority.FINAL;
     }
 
     @Override

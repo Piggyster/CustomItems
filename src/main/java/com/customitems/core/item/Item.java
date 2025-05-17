@@ -1,6 +1,7 @@
 package com.customitems.core.item;
 
 import com.customitems.core.ItemPlugin;
+import com.customitems.core.item.template.ItemTemplate;
 import com.customitems.core.item.template.Template;
 import com.customitems.core.property.*;
 import com.customitems.core.property.EventListener;
@@ -142,8 +143,7 @@ public class Item {
             }
 
 
-            //rawProperties.sort(Comparator.comparingInt(p -> p.getPriority().ordinal())); //TODO
-            boolean dirty = false; //might need to be outside lambda and be atomic
+            boolean dirty = false;
 
             for(Map.Entry<Class<? extends Property>, Property> entry : rawProperties.entrySet()) {
                 Property property = entry.getValue();
@@ -152,12 +152,8 @@ public class Item {
                     dirty = persistentProperty.load(propertyNbt);
                 }
             }
-
             if(dirty) save();
-
-
         });
-        //rawProperties.forEach(this::addProperty);
     }
 
 

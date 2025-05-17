@@ -97,6 +97,11 @@ public class DefaultLoader extends AbstractLoader {
                 }
             }
 
+            if(json.has("texture")) {
+                String texture = json.get("texture").getAsString();
+                builder.texture(texture);
+            }
+
             return builder.build();
         } catch (Exception ex) {
             Bukkit.getLogger().warning("Failed to load template from file: " + file.getName() + " - " + ex.getMessage());

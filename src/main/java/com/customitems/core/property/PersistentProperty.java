@@ -12,7 +12,7 @@ import de.tr7zw.nbtapi.iface.ReadableNBT;
  */
 
 public interface PersistentProperty extends Property {
-    //TODO maybe work on treating it more like a supplier
+    //TODO save boolean to see if changes were made
     boolean load(ReadableNBT nbt);
     void save(ReadWriteNBT nbt);
 }

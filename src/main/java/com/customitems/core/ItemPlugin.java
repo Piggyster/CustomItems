@@ -2,7 +2,9 @@ package com.customitems.core;
 
 import com.customitems.core.ability.AbilityProperty;
 import com.customitems.core.ability.AbilityRegistry;
-import com.customitems.core.ability.impl.TeleportAbility;
+import com.customitems.core.ability.impl.FireballNode;
+import com.customitems.core.ability.impl.RightClickAbility;
+import com.customitems.core.ability.impl.TeleportNode;
 import com.customitems.core.command.GiveCommand;
 import com.customitems.core.command.PropertyCommand;
 import com.customitems.core.command.StatCommand;
@@ -15,8 +17,6 @@ import com.customitems.core.service.Services;
 import com.customitems.core.stat.StatListener;
 import com.customitems.core.stat.StatStorage;
 import com.customitems.core.property.impl.UniqueProperty;
-import com.customitems.core.test.TestListener;
-import org.bukkit.Bukkit;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -36,7 +36,6 @@ public class ItemPlugin extends JavaPlugin {
     @Override
     public void onEnable() {
         instance = this;
-
         Services.register(AbilityRegistry.class, new AbilityRegistry());
         registerAbilities();
         Services.register(PropertyRegistry.class, new PropertyRegistry());
@@ -75,7 +74,8 @@ public class ItemPlugin extends JavaPlugin {
 
     private void registerAbilities() {
         AbilityRegistry registry = Services.get(AbilityRegistry.class);
-        registry.register(new TeleportAbility());
+        registry.register(new RightClickAbility("teleport", new TeleportNode(), context -> context.player().sendMessage("You have been teleported")));
+        registry.register(new RightClickAbility("fireball", new FireballNode()));
     }
 
 

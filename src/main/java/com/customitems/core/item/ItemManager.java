@@ -11,6 +11,7 @@ import de.tr7zw.nbtapi.NBT;
 import de.tr7zw.nbtapi.iface.ReadWriteNBT;
 import de.tr7zw.nbtapi.iface.ReadableNBT;
 import org.bukkit.Bukkit;
+import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 
 import java.io.ByteArrayInputStream;
@@ -44,7 +45,13 @@ public class ItemManager {
     }
 
     public Template getTemplate(String id) {
-        return templates.get(id);
+        Template template = templates.get(id);
+        if(template == null) {
+            Material material = Material.getMaterial(id.toUpperCase());
+            if(material == null) return null;
+            return new VanillaTemplate(material);
+        }
+        return template;
     }
 
     public List<Template> getTemplates() {
@@ -53,27 +60,17 @@ public class ItemManager {
 
     //TODO more improvements
     public Item getItem(ItemStack stack) {
-        Bukkit.getLogger().warning("Fetching item: " + stack);
         Template template = extractTemplate(stack);
         if(template.isVanilla()) {
-            Bukkit.getLogger().warning("Item was vanilla");
             return new Item(stack, template);
         }
         UUID uuid = extractUUID(stack);
         if(uuid != null) {
-            Bukkit.getLogger().warning("Item has UUID");
-            Item item = strongCache.computeIfAbsent(uuid, id -> {
-                Bukkit.getLogger().warning("Item was not in cache");
-                return new Item(stack, template);
-            });
+            Item item = strongCache.computeIfAbsent(uuid, id -> new Item(stack, template));
             item.bind(stack);
             return item;
         } else {
-            Bukkit.getLogger().warning("Item does not have UUID");
-            return weakCache.computeIfAbsent(stack, s -> {
-                Bukkit.getLogger().warning("Item was not in cache");
-                return new Item(stack, template);
-            });
+            return weakCache.computeIfAbsent(stack, s -> new Item(stack, template));
         }
     }
 

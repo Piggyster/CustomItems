@@ -26,7 +26,7 @@ public class VanillaTemplate implements Template {
 
     @Override
     public String getId() {
-        return "vanilla:" + material.toString().toLowerCase();
+        return material.toString().toLowerCase();
     }
 
     @Override

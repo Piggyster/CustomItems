@@ -38,7 +38,8 @@ public class ItemTemplate implements Template {
         private String displayName;
         private Material material = Material.STONE;
         private ItemRarity rarity = ItemRarity.COMMON;
-        private Set<Supplier<Property>> defaultPropertySuppliers = new HashSet<>();
+        private final Set<Supplier<Property>> defaultPropertySuppliers = new HashSet<>();
+        private String texture;
 
         public Builder(String id) {
             this.id = id;
@@ -66,7 +67,15 @@ public class ItemTemplate implements Template {
             return this;
         }
 
+        public Builder texture(String texture) {
+            this.texture = texture;
+            return this;
+        }
+
         public ItemTemplate build() {
+            if(material.equals(Material.PLAYER_HEAD) && texture != null && !texture.isEmpty()) {
+                return new SkullTemplate(id, texture, displayName, rarity, defaultPropertySuppliers);
+            }
             return new ItemTemplate(id, material, displayName, rarity, defaultPropertySuppliers);
         }
     }

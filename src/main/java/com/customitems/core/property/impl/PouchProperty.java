@@ -12,9 +12,12 @@ import de.tr7zw.nbtapi.NBT;
 import de.tr7zw.nbtapi.iface.ReadWriteNBT;
 import de.tr7zw.nbtapi.iface.ReadableNBT;
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
+import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
 import org.bukkit.event.block.Action;
+import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.Inventory;
@@ -125,11 +128,6 @@ public class PouchProperty extends AbstractProperty implements PersistentPropert
         return TYPE;
     }
 
-    @Override
-    public PropertyPriority getPriority() {
-        return PropertyPriority.MASTER;
-    }
-
     public static byte[] serialize(Map<Integer, Item> items) {
         try(ByteArrayOutputStream baos = new ByteArrayOutputStream();
             DataOutputStream out = new DataOutputStream(baos);) {
@@ -192,22 +190,31 @@ public class PouchProperty extends AbstractProperty implements PersistentPropert
     }
 
     @Override
-    public void handle(Event event) {
-        if(event instanceof PlayerInteractEvent playerInteractEvent) {
-            if(playerInteractEvent.getAction() != Action.RIGHT_CLICK_BLOCK && playerInteractEvent.getAction() != Action.RIGHT_CLICK_AIR) return;
-            playerInteractEvent.getPlayer().openInventory(getInventory());
-            playerInteractEvent.setCancelled(true);
-        } else if(event instanceof InventoryCloseEvent inventoryCloseEvent) {
-            if(!inventoryCloseEvent.getInventory().equals(getInventory())) return;
+    public void handle(Event genericEvent) {
+        if(genericEvent instanceof PlayerInteractEvent event) {
+            if(event.getAction() != Action.RIGHT_CLICK_BLOCK && event.getAction() != Action.RIGHT_CLICK_AIR) return;
+            event.getPlayer().openInventory(getInventory());
+            event.setCancelled(true);
+        } else if(genericEvent instanceof InventoryCloseEvent event) {
+            if(!event.getInventory().equals(getInventory())) return;
             updateContents();
             getItem().save();
             getItem().updateDisplay();
+        } else if(genericEvent instanceof InventoryClickEvent event) {
+            if(!getInventory().equals(event.getInventory())) return;
+            ItemStack stack = event.getCurrentItem();
+            if(stack == null || stack.getType().isAir()) return;
+            Item item = Item.of(stack);
+            if(item.getTemplate().isVanilla()) return;
+            if(!item.hasProperty(PouchProperty.TYPE)) return;
+            event.setCancelled(true);
+            //event.getWhoClicked().sendMessage(ChatColor.RED + "You cannot put a pouch inside another pouch!");
         }
     }
 
     @Override
     public Set<Class<? extends Event>> getEvents() {
-        return Set.of(PlayerInteractEvent.class, InventoryCloseEvent.class);
+        return Set.of(PlayerInteractEvent.class, InventoryCloseEvent.class, InventoryClickEvent.class);
     }
 
     @Override

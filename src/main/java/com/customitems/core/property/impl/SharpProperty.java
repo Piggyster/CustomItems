@@ -41,10 +41,6 @@ public class SharpProperty extends AbstractProperty implements PersistentPropert
         return TYPE;
     }
 
-    @Override
-    public PropertyPriority getPriority() {
-        return PropertyPriority.INTER;
-    }
 
     @Override
     public boolean load(ReadableNBT nbt) {
