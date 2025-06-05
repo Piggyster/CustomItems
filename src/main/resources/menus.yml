@@ -1,0 +1,16 @@
+Stat:
+  Title: "Player Stats"
+  Rows: 3
+  Items:
+    StatUpdate:
+      Slot: 13
+      Material: GREEN_WOOL
+      Name: "&aUpdate Your Stats"
+      Lore:
+        - "&7Runs an update and fetches"
+        - "&7the latest stats from the server."
+    DamageStat:
+      Slot: 0
+      Material: DIAMOND_SWORD
+      Name: "&aDamage: %damage%"
+

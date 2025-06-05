@@ -5,9 +5,10 @@ import com.customitems.core.ability.AbilityRegistry;
 import com.customitems.core.ability.impl.FireballNode;
 import com.customitems.core.ability.impl.RightClickAbility;
 import com.customitems.core.ability.impl.TeleportNode;
+import com.customitems.core.command.CraftCommand;
 import com.customitems.core.command.GiveCommand;
 import com.customitems.core.command.PropertyCommand;
-import com.customitems.core.command.StatCommand;
+import com.customitems.core.crafting.RecipeManager;
 import com.customitems.core.item.ItemManager;
 import com.customitems.core.property.PropertyListener;
 import com.customitems.core.property.PropertyRegistry;
@@ -19,6 +20,8 @@ import com.customitems.core.stat.StatStorage;
 import com.customitems.core.property.impl.UniqueProperty;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
+
+import java.io.File;
 
 /**
  * CustomItems Plugin
@@ -42,17 +45,20 @@ public class ItemPlugin extends JavaPlugin {
         registerProperties();
         Services.register(ItemManager.class, new ItemManager());
         Services.register(StatStorage.class, new StatStorage());
+        Services.register(RecipeManager.class, new RecipeManager(new File(getDataFolder(), "recipes")));
 
 
         registerEvents();
 
         getCommand("property").setExecutor(new PropertyCommand());
-        getCommand("stat").setExecutor(new StatCommand());
+        getCommand("craft").setExecutor(new CraftCommand());
 
         GiveCommand giveCommand = new GiveCommand();
 
         getCommand("give").setExecutor(giveCommand);
         getCommand("give").setTabCompleter(giveCommand);
+
+
 
     }
 

@@ -5,6 +5,8 @@ plugins {
 group = 'com.customitems'
 version = '2.0-SNAPSHOT'
 
+sourceCompatibility = targetCompatibility = JavaVersion.VERSION_21
+
 repositories {
     mavenCentral()
     maven { url 'https://hub.spigotmc.org/nexus/content/repositories/snapshots/' }
@@ -17,4 +19,5 @@ dependencies {
     compileOnly 'org.spigotmc:spigot-api:1.21.4-R0.1-SNAPSHOT'
     compileOnly 'de.tr7zw:item-nbt-api-plugin:2.14.1'
     compileOnly 'com.comphenix.protocol:ProtocolLib:5.1.0'
+    implementation files('C://Users/Sylvan/Desktop/EasyAPI/build/libs/EasyAPI-1.0-SNAPSHOT-all.jar')
 }

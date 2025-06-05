@@ -218,8 +218,12 @@ public class Item {
     }
 
     public boolean addProperty(@NotNull Property property) {
+        return addProperty(property, false);
+    }
+
+    public boolean addProperty(@NotNull Property property, boolean override) {
         PropertyType<? extends Property> type = property.getType();
-        if(hasProperty(type)) {
+        if(hasProperty(type) && !override) {
             return false;
         }
         properties.put(type, property);
