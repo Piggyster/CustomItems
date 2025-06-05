@@ -8,6 +8,7 @@ import com.customitems.core.ability.impl.TeleportNode;
 import com.customitems.core.command.CraftCommand;
 import com.customitems.core.command.GiveCommand;
 import com.customitems.core.command.PropertyCommand;
+import com.customitems.core.command.StatCommand;
 import com.customitems.core.crafting.RecipeManager;
 import com.customitems.core.item.ItemManager;
 import com.customitems.core.property.PropertyListener;
@@ -52,6 +53,7 @@ public class ItemPlugin extends JavaPlugin {
 
         getCommand("property").setExecutor(new PropertyCommand());
         getCommand("craft").setExecutor(new CraftCommand());
+        getCommand("stats").setExecutor(new StatCommand());
 
         GiveCommand giveCommand = new GiveCommand();
 

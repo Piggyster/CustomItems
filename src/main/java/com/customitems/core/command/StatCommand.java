@@ -1,7 +1,5 @@
 package com.customitems.core.command;
 
-import com.customitems.core.ItemPlugin;
-import com.customitems.core.item.ItemManager;
 import com.customitems.core.service.Services;
 import com.customitems.core.stat.StatStorage;
 import com.customitems.core.stat.StatType;
