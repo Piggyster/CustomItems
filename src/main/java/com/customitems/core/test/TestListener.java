@@ -1,8 +1,6 @@
 package com.customitems.core.test;
 
 import com.customitems.core.item.Item;
-import com.customitems.core.property.Property;
-import com.customitems.core.property.impl.PouchProperty;
 import de.tr7zw.nbtapi.NBT;
 import org.bukkit.Bukkit;
 import org.bukkit.event.EventHandler;
@@ -23,10 +21,10 @@ public class TestListener implements Listener {
         if(stack.getType().isAir()) return;
 
         Item item = Item.of(stack);
-        if(item.hasProperty(PouchProperty.TYPE)) {
-            PouchProperty property = item.getProperty(PouchProperty.TYPE);
-            Inventory inventory = property.getInventory();
-            event.getPlayer().openInventory(inventory);
+        if(false) {
+           // PouchProperty property = item.getProperty(PouchProperty.TYPE);
+            //Inventory inventory = property.getInventory();
+            //event.getPlayer().openInventory(inventory);
 
             String nbtString = NBT.get(stack, nbt -> {
                 return nbt.toString();
@@ -41,14 +39,14 @@ public class TestListener implements Listener {
         if(stack.getType().isAir()) return;
 
         Item item = Item.of(stack);
-        if(item.hasProperty(PouchProperty.TYPE)) {
-            PouchProperty property = item.getProperty(PouchProperty.TYPE);
-            Inventory inventory = property.getInventory();
-            if(inventory.equals(event.getInventory())) {
-                property.updateContents();
-                item.save();
+        if(false) {
+            //PouchProperty property = item.getProperty(PouchProperty.TYPE);
+            //Inventory inventory = property.getInventory();
+            //if(inventory.equals(event.getInventory())) {
+            //    property.updateContents();
+                //item.save();
                 item.updateDisplay();
-            }
+
         }
     }
 }

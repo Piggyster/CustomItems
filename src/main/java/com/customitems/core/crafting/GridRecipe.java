@@ -3,11 +3,6 @@ package com.customitems.core.crafting;
 import com.customitems.core.item.Item;
 import com.customitems.core.item.ItemManager;
 import com.customitems.core.item.template.Template;
-import com.customitems.core.property.PersistentProperty;
-import com.customitems.core.property.Property;
-import com.customitems.core.property.PropertyRegistry;
-import com.customitems.core.service.Services;
-import com.google.common.collect.ImmutableMap;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
@@ -71,7 +66,7 @@ public class GridRecipe implements Recipe {
     @Override
     public Item createResult(Map<Integer, Item> items, Player player) {
         Item resultItem = new Item(resultTemplate);
-
+        /*
         if(baseItemSlot >= 0 && items.containsKey(baseItemSlot)) {
             Item baseItem = items.get(baseItemSlot);
             for(Property property : baseItem.getProperties()) {
@@ -83,6 +78,8 @@ public class GridRecipe implements Recipe {
         }
         resultItem.getStack().setAmount(resultQuantity);
         resultItem.updateDisplay();
+        */
+
         return resultItem;
     }
 

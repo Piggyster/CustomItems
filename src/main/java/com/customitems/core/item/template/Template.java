@@ -1,10 +1,11 @@
 package com.customitems.core.item.template;
 
+import com.customitems.core.component.Component;
 import com.customitems.core.item.ItemRarity;
-import com.customitems.core.property.Property;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -22,8 +23,7 @@ public interface Template {
 
     ItemRarity getRarity();
 
-    //property supplier method
-    Set<Property> getDefaultProperties();
+    Map<Class<? extends Component>, Component> getComponents();
 
     ItemStack createItemStack();
 

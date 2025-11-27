@@ -3,9 +3,6 @@ package com.customitems.core.item.template.loader;
 import com.customitems.core.ItemPlugin;
 import com.customitems.core.item.ItemManager;
 import com.customitems.core.item.template.Template;
-import com.customitems.core.property.Property;
-import com.customitems.core.property.PropertyRegistry;
-import com.customitems.core.property.PropertyType;
 import com.customitems.core.service.Services;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -27,12 +24,10 @@ public abstract class AbstractLoader implements TemplateLoader {
 
     protected final File directory;
     protected final Gson gson;
-    protected final PropertyRegistry registry;
 
     public AbstractLoader(File directory) {
         this.directory = directory;
         gson = new GsonBuilder().setPrettyPrinting().create();
-        registry = Services.get(PropertyRegistry.class);
 
         if(!directory.exists()) {
             directory.mkdirs();
@@ -40,16 +35,6 @@ public abstract class AbstractLoader implements TemplateLoader {
         }
     }
 
-    protected Supplier<Property> createPropertySupplier(String id, JsonElement json) {
-        PropertyType<? extends Property> type = registry.getType(id);
-
-        if(type == null || type.jsonFactory() == null) {
-            Bukkit.getLogger().warning("Unknown property type: " + id);
-            return null;
-        }
-
-        return () -> registry.fromJson(id, json);
-    }
 
     @Override
     public List<Template> loadAllTemplates() {

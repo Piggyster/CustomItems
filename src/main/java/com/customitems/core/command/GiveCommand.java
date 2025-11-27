@@ -58,9 +58,8 @@ public class GiveCommand implements CommandExecutor, TabCompleter {
         stack.setAmount(quantity);
 
         Item item = new Item(stack, template);
-        item.updateDisplay();
-        item.save();
-        target.getInventory().addItem(item.getStack());
+        ItemStack itemStack = item.update(target.getPlayer(), item.getStack());
+        target.getInventory().addItem(itemStack);
         sender.sendMessage("Gave " + quantity + " " + template.getId() + " to " + target.getName() + ".");
         return true;
     }

@@ -1,11 +1,11 @@
 package com.customitems.core.item.template.loader;
 
 import com.customitems.core.ItemPlugin;
+import com.customitems.core.component.Component;
+import com.customitems.core.component.ComponentRegistry;
 import com.customitems.core.item.ItemRarity;
 import com.customitems.core.item.template.ItemTemplate;
 import com.customitems.core.item.template.Template;
-import com.customitems.core.property.Property;
-import com.customitems.core.property.PropertyRegistry;
 import com.google.gson.*;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -84,16 +84,18 @@ public class DefaultLoader extends AbstractLoader {
                 }
             }
 
-            // Process properties
-            if (json.has("properties")) {
-                JsonObject propertiesJson = json.getAsJsonObject("properties");
-                for(String key : propertiesJson.keySet()) {
-                    JsonElement propertyJson = propertiesJson.get(key);
+            // Process components
+            if (json.has("components")) {
+                JsonObject componentsJson = json.getAsJsonObject("components");
+                for(String key : componentsJson.keySet()) {
+                    ItemPlugin.get().getLogger().warning("Attempting to load " + key + " component");
+                    JsonElement componentJson = componentsJson.get(key);
+                    Component component = ComponentRegistry.deserialize(key, componentJson);
 
-                    Supplier<Property> propertySupplier = createPropertySupplier(key, propertyJson);
-                    if(propertySupplier != null) {
-                        builder.addProperty(propertySupplier);
-                    }
+                    if(component == null) continue;
+                    ItemPlugin.get().getLogger().warning("Found component deserializer");
+
+                    builder.addComponent(component);
                 }
             }
 
@@ -117,12 +119,11 @@ public class DefaultLoader extends AbstractLoader {
         json.addProperty("id", "exotic_sword");
         json.addProperty("material", "diamond_sword");
         json.addProperty("displayName", "Exotic Sword");
-        json.addProperty("rarity", "epic");
-
+        json.addProperty("rarity", "rare");
 
 
         // Add properties
-        JsonObject properties = new JsonObject();
+        JsonObject components = new JsonObject();
 
         // Attribute
         JsonObject statProperty = new JsonObject();
@@ -130,9 +131,9 @@ public class DefaultLoader extends AbstractLoader {
         statProperty.addProperty("damage", 15);
         statProperty.addProperty("mana", 100);
 
-        properties.add("stats", statProperty);
+        components.add("unique", new JsonObject());
 
-        json.add("properties", properties);
+        json.add("components", components);
 
         // Write to file
         try (FileWriter writer = new FileWriter(exampleFile)) {

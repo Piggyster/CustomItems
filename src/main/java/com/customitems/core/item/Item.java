@@ -1,16 +1,17 @@
 package com.customitems.core.item;
 
-import com.customitems.core.ItemPlugin;
-import com.customitems.core.item.template.ItemTemplate;
+import com.customitems.core.attribute.Attribute;
+import com.customitems.core.attribute.AttributeFactory;
+import com.customitems.core.attribute.AttributeRegistry;
+import com.customitems.core.component.Component;
+import com.customitems.core.handler.LoreHandler;
 import com.customitems.core.item.template.Template;
-import com.customitems.core.property.*;
-import com.customitems.core.property.EventListener;
 import com.customitems.core.service.Services;
-import com.google.common.collect.ImmutableList;
 import de.tr7zw.nbtapi.NBT;
 import de.tr7zw.nbtapi.iface.ReadWriteNBT;
 import de.tr7zw.nbtapi.iface.ReadableNBT;
 import org.bukkit.ChatColor;
+import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
@@ -23,7 +24,6 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Represents a customitem in the game.
@@ -38,8 +38,7 @@ public class Item {
 
     private Template template;
     private ItemStack owner;
-    private Map<PropertyType<?>, Property> properties;
-    private List<EventListener> listeners;
+    private List<Attribute<?>> attributes; //TODO map
 
     public static Item of(ItemStack itemStack) {
         ItemManager itemManager = Services.get(ItemManager.class);
@@ -58,16 +57,15 @@ public class Item {
     public Item(@NotNull ItemStack owner, @NotNull Template template) {
         Objects.requireNonNull(owner);
         Objects.requireNonNull(template);
-        this.owner = owner;
+        this.owner = owner.clone();
         this.template = template;
-        properties = new ConcurrentHashMap<>();
-        listeners = new ArrayList<>();
+        attributes = new ArrayList<>();
 
         load();
 
-        if(mark() || !owner.hasItemMeta()) {
-            updateDisplay();
-        }
+        //if(mark() || !owner.hasItemMeta()) {
+        //    updateDisplay();
+        //}
     }
 
 
@@ -88,15 +86,6 @@ public class Item {
         });
     }
 
-    @SuppressWarnings("unchecked")
-    public <T extends Event> void handleEvent(T event) {
-        for(EventListener listener : listeners) {
-            if(listener.getEvents().contains(event.getClass())) {
-                listener.handle(event);
-            }
-        }
-    }
-
     /**
      *
      */
@@ -110,49 +99,24 @@ public class Item {
      * the default properties from the template.
      */
     public void load() {
-        properties.clear();
+        attributes.clear();
 
-        Map<Class<? extends Property>, Property> rawProperties = new HashMap<>();
-
-        //load properties from nbt
         NBT.modify(owner, nbt -> {
+            ReadWriteNBT attributeNbt = nbt.hasTag("attributes") ? nbt.getCompound("attributes") : null;
 
-            ReadWriteNBT propertyNbt = nbt.hasTag("properties") ? nbt.getCompound("properties") : null;
-            PropertyRegistry registry = Services.get(PropertyRegistry.class);
-
-            if(propertyNbt != null) {
-                for(String id : propertyNbt.getKeys()) {
-                    Property property = registry.fromNbt(id, propertyNbt);
-                    if(property == null) continue;
-                    rawProperties.put(property.getClass(), property);
+            if(attributeNbt != null) {
+                for(AttributeFactory<?> factory : AttributeRegistry.getFactories()) {
+                    if(attributeNbt.hasTag(factory.getKey())) {
+                        Attribute<?> attribute = factory.newInstance();
+                        attribute.loadFromNBT(attributeNbt);
+                        attributes.add(attribute);
+                    }
                 }
             }
 
-            for(Property property : template.getDefaultProperties()) {
-                Property existing = rawProperties.putIfAbsent(property.getClass(), property);
-                if(existing instanceof MergeableProperty mergeableProperty) {
-                    mergeableProperty.merge(property);
-                }
+            if(attributes.isEmpty()) {
+                nbt.removeKey("attributes");
             }
-
-
-            if(rawProperties.isEmpty()) {
-                nbt.removeKey("properties");
-            } else if(!nbt.hasTag("properties")) {
-                propertyNbt = nbt.getOrCreateCompound("properties");
-            }
-
-
-            boolean dirty = false;
-
-            for(Map.Entry<Class<? extends Property>, Property> entry : rawProperties.entrySet()) {
-                Property property = entry.getValue();
-                addProperty(property);
-                if(property instanceof PersistentProperty persistentProperty) {
-                    dirty = persistentProperty.load(propertyNbt);
-                }
-            }
-            if(dirty) save();
         });
     }
 
@@ -161,23 +125,26 @@ public class Item {
      * Saves the item's properties to NBT data.
      * Only applies to persistent properties.
      */
-    public void save() {
-        NBT.modify(owner, nbt -> {
-            if(properties.isEmpty() && nbt.hasTag("properties")) {
-                nbt.removeKey("proerties");
+
+    private void save(ItemStack itemStack) {
+        NBT.modify(itemStack, nbt -> {
+            if(!template.isVanilla() && !nbt.hasTag("item_id")) {
+                nbt.setString("item_id", template.getId());
+            }
+
+            if(attributes.isEmpty() && nbt.hasTag("attributes")) {
+                nbt.removeKey("attributes");
                 return;
             }
-            ReadWriteNBT propertyNbt = nbt.getOrCreateCompound("properties");
+            ReadWriteNBT attributeNbt = nbt.getOrCreateCompound("attributes");
             boolean executed = false;
-            for(Property property : properties.values()) {
-                if(property instanceof PersistentProperty persistentProperty) {
-                    persistentProperty.save(propertyNbt);
-                    executed = true;
-                }
+            for(Attribute<?> attribute : attributes) {
+                attribute.saveToNBT(attributeNbt);
+                executed = true;
             }
 
             if(!executed) {
-                nbt.removeKey("properties");
+                nbt.removeKey("attributes");
             }
         });
     }
@@ -195,7 +162,7 @@ public class Item {
 
         meta.setDisplayName(rarity.getColor() + template.getDisplayName());
 
-        List<LoreContributor> loreContributors = properties.values().stream()
+        /*List<LoreContributor> loreContributors = properties.values().stream()
                 .filter(p -> p instanceof LoreContributor)
                 .map(p -> (LoreContributor) p)
                 .sorted(Comparator.comparingInt(LoreContributor::getLorePriority).reversed())
@@ -209,6 +176,8 @@ public class Item {
         visitor.visit(rarity.getColor().toString() + ChatColor.BOLD + rarity.getDisplayName().toUpperCase());
 
         meta.setLore(visitor.getLore());
+        */
+
 
         meta.addItemFlags(ItemFlag.values());
         meta.setUnbreakable(true);
@@ -217,48 +186,95 @@ public class Item {
         owner.setType(template.getMaterial());
     }
 
-    public boolean addProperty(@NotNull Property property) {
-        return addProperty(property, false);
-    }
+    public ItemStack update(Player player, ItemStack itemStack) {
+        template.getComponents().forEach((clazz, component) -> {
+            component.updateItem(this);
+        });
 
-    public boolean addProperty(@NotNull Property property, boolean override) {
-        PropertyType<? extends Property> type = property.getType();
-        if(hasProperty(type) && !override) {
-            return false;
+        ItemMeta meta = itemStack.getItemMeta();
+        assert(meta != null);
+
+        ItemRarity rarity = getRarity();
+        meta.setDisplayName(rarity.getColor() + template.getDisplayName());
+
+        List<String> lore = new ArrayList<>();
+        lore.add("");
+
+        for(Attribute<?> attribute : attributes) {
+            if(attribute instanceof LoreHandler contributor) {
+                lore.addAll(contributor.contributeLore(this, player));
+            }
         }
-        properties.put(type, property);
-        property.init(this);
 
-        if(property instanceof EventListener listener) {
-            listeners.add(listener);
+        for(Component component : template.getComponents().values()) {
+            if(component instanceof LoreHandler contributor) {
+                lore.addAll(contributor.contributeLore(this, player));
+            }
         }
-        return true;
+
+        lore.add(rarity.getColor() + "&l" + rarity.getDisplayName().toUpperCase());
+
+        String nbtString = NBT.get(itemStack, nbt -> {
+            return nbt.toString();
+        });
+
+        lore.add("&c" + nbtString);
+
+        lore = lore.stream().map(line -> ChatColor.translateAlternateColorCodes('&', line)).toList();
+        meta.setLore(lore);
+
+        meta.addItemFlags(ItemFlag.values());
+        meta.setUnbreakable(true);
+
+        itemStack.setItemMeta(meta);
+        itemStack.setType(template.getMaterial());
+        save(itemStack);
+        return itemStack;
     }
 
-    public boolean hasProperty(PropertyType<? extends Property> type) {
-        return properties.containsKey(type);
-    }
 
-    public boolean hasProperty(Property property) {
-        return properties.containsValue(property);
+    public <T> boolean hasAttribute(Class<? extends Attribute<T>> clazz) {
+        for(Attribute<?> attribute : attributes) {
+            if(attribute.getClass().isAssignableFrom(clazz)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @SuppressWarnings("unchecked")
     @Nullable
-    public <T extends Property> T getProperty(@NotNull PropertyType<? extends T> type) {
-        return (T) properties.get(type);
+    public <T> Attribute<T> getAttribute(Class<? extends Attribute<T>> clazz) {
+        for(Attribute<?> attribute : attributes) {
+            if(attribute.getClass().isAssignableFrom(clazz)) {
+                return (Attribute<T>) attribute;
+            }
+        }
+        return null;
     }
 
-    public List<Property> getProperties() {
-        return ImmutableList.copyOf(properties.values());
+    public <T> void addAttribute(Attribute<T> attribute) {
+        attributes.add(attribute);
     }
 
-    public void removeProperty(String type) {
-        properties.remove(type);
+    public <T> boolean hasComponent(Class<? extends Component> clazz) {
+        return template.getComponents().containsKey(clazz);
     }
+
+    @SuppressWarnings("unchecked")
+    @Nullable
+    public <T> T getComponent(Class<? extends Component> clazz) {
+        return (T) template.getComponents().get(clazz);
+    }
+
 
     public Template getTemplate() {
         return template;
+    }
+
+    public ItemRarity getRarity() {
+        //TODO rarity modifiers
+        return template.getRarity();
     }
 
     public ItemStack getStack() {

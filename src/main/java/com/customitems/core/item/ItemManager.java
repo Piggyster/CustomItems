@@ -12,6 +12,7 @@ import de.tr7zw.nbtapi.iface.ReadWriteNBT;
 import de.tr7zw.nbtapi.iface.ReadableNBT;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
 import java.io.ByteArrayInputStream;
@@ -38,6 +39,16 @@ public class ItemManager {
 
         DefaultLoader loader = new DefaultLoader(new File(plugin.getDataFolder(), "templates"));
         loader.loadAllTemplates().forEach(this::registerTemplate);
+
+        Bukkit.getScheduler().runTaskTimer(ItemPlugin.get(), () -> {
+            for(Player player : Bukkit.getOnlinePlayers()) {
+                ItemStack itemStack = player.getInventory().getItemInMainHand();
+                if(itemStack == null || itemStack.getType() == Material.AIR) continue;
+                Item item = Item.of(itemStack);
+
+                item.update(player, itemStack);
+            }
+        }, 0, 20L);
     }
 
     public void registerTemplate(Template template) {

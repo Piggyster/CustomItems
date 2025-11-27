@@ -1,7 +1,6 @@
 package com.customitems.core.stat;
 
 import com.customitems.core.item.Item;
-import com.customitems.core.property.Property;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -58,12 +57,12 @@ public class StatStorage {
     private void fetchProviders(Item item, Map<StatPhase, List<StatProvider>> providers) {
         if(item == null) return;
 
-        for(Property property : item.getProperties()) {
-            if(property instanceof StatProvider provider) {
-                providers.computeIfAbsent(provider.getPhase(),
-                        phase -> new ArrayList<>()).add(provider);
-            }
-        }
+        //for(Property property : item.getProperties()) {
+        //    if(property instanceof StatProvider provider) {
+        //        providers.computeIfAbsent(provider.getPhase(),
+        //                phase -> new ArrayList<>()).add(provider);
+        //    }
+        //}
     }
 
     private void calculateStats(Map<StatPhase, List<StatProvider>> providers, Map<StatType, Double> stats) {

@@ -1,13 +1,15 @@
 package com.customitems.core.item.template;
 
+import com.customitems.core.component.Component;
 import com.customitems.core.item.ItemRarity;
-import com.customitems.core.property.Property;
+
 import de.tr7zw.nbtapi.NBT;
 import de.tr7zw.nbtapi.iface.ReadWriteNBT;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Supplier;
@@ -17,8 +19,8 @@ public class SkullTemplate extends ItemTemplate {
     private final String texture;
 
     public SkullTemplate(@NotNull String id, @NotNull String texture, @NotNull String displayName,
-                         @NotNull ItemRarity rarity, @NotNull Set<Supplier<Property>> defaultPropertySuppliers) {
-        super(id, Material.PLAYER_HEAD, displayName, rarity, defaultPropertySuppliers);
+                         @NotNull ItemRarity rarity, @NotNull Map<Class<? extends Component>, Component> components) {
+        super(id, Material.PLAYER_HEAD, displayName, rarity, components);
         this.texture = texture;
     }
 

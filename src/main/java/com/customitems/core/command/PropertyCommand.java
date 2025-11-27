@@ -23,9 +23,9 @@ public class PropertyCommand implements CommandExecutor {
         Item item = Item.of(heldStack);
 
         player.sendMessage("Property information:");
-        item.getProperties().forEach(property -> {
-            player.sendMessage(property.toString());
-        });
+        //item.getProperties().forEach(property -> {
+        //    player.sendMessage(property.toString());
+        //});
 
         return false;
     }

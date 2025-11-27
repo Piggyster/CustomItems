@@ -1,6 +1,5 @@
 package com.customitems.core;
 
-import com.customitems.core.ability.AbilityProperty;
 import com.customitems.core.ability.AbilityRegistry;
 import com.customitems.core.ability.impl.FireballNode;
 import com.customitems.core.ability.impl.RightClickAbility;
@@ -11,14 +10,10 @@ import com.customitems.core.command.PropertyCommand;
 import com.customitems.core.command.StatCommand;
 import com.customitems.core.crafting.RecipeManager;
 import com.customitems.core.item.ItemManager;
-import com.customitems.core.property.PropertyListener;
-import com.customitems.core.property.PropertyRegistry;
-import com.customitems.core.property.impl.PouchProperty;
-import com.customitems.core.property.impl.StatProperty;
+import com.customitems.core.listener.InteractListener;
 import com.customitems.core.service.Services;
 import com.customitems.core.stat.StatListener;
 import com.customitems.core.stat.StatStorage;
-import com.customitems.core.property.impl.UniqueProperty;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -42,7 +37,6 @@ public class ItemPlugin extends JavaPlugin {
         instance = this;
         Services.register(AbilityRegistry.class, new AbilityRegistry());
         registerAbilities();
-        Services.register(PropertyRegistry.class, new PropertyRegistry());
         registerProperties();
         Services.register(ItemManager.class, new ItemManager());
         Services.register(StatStorage.class, new StatStorage());
@@ -69,15 +63,12 @@ public class ItemPlugin extends JavaPlugin {
         PluginManager pluginManager = getServer().getPluginManager();
         pluginManager.registerEvents(new StatListener(storage), this);
         //pluginManager.registerEvents(new TestListener(), this);
-        pluginManager.registerEvents(new PropertyListener(), this);
+
+        pluginManager.registerEvents(new InteractListener(), this);
     }
 
     private void registerProperties() {
-        PropertyRegistry registry = Services.get(PropertyRegistry.class);
-        registry.register(StatProperty.TYPE);
-        registry.register(PouchProperty.TYPE);
-        registry.register(UniqueProperty.TYPE);
-        registry.register(AbilityProperty.TYPE);
+
     }
 
     private void registerAbilities() {

@@ -1,12 +1,14 @@
 package com.customitems.core.item.template;
 
+import com.customitems.core.component.Component;
 import com.customitems.core.item.ItemRarity;
-import com.customitems.core.property.Property;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
 
@@ -22,15 +24,15 @@ public class ItemTemplate implements Template {
     private final Material material;
     private final String displayName;
     private final ItemRarity rarity;
-    private final Set<Supplier<Property>> defaultPropertySuppliers;
+    private final Map<Class<? extends Component>, Component> components;
 
     public ItemTemplate(@NotNull String id, @NotNull Material material, @NotNull String displayName,
-                        @NotNull ItemRarity rarity, @NotNull Set<Supplier<Property>> defaultPropertySuppliers) {
+                        @NotNull ItemRarity rarity, @NotNull  Map<Class<? extends Component>, Component> components) {
         this.id = id;
         this.material = material;
         this.displayName = displayName;
         this.rarity = rarity;
-        this.defaultPropertySuppliers = defaultPropertySuppliers;
+        this.components = components;
     }
 
     public static class Builder {
@@ -38,7 +40,7 @@ public class ItemTemplate implements Template {
         private String displayName;
         private Material material = Material.STONE;
         private ItemRarity rarity = ItemRarity.COMMON;
-        private final Set<Supplier<Property>> defaultPropertySuppliers = new HashSet<>();
+        private final Map<Class<? extends Component>, Component> components = new HashMap<>();
         private String texture;
 
         public Builder(String id) {
@@ -61,9 +63,12 @@ public class ItemTemplate implements Template {
             return this;
         }
 
-        public Builder addProperty(Supplier<Property> propertySupplier) {
-            if(propertySupplier == null) return this;
-            this.defaultPropertySuppliers.add(propertySupplier);
+        public Builder addComponent(Component component) {
+            components.put(component.getClass(), component);
+
+            component.getInherited().forEach(inherited -> {
+                components.putIfAbsent(inherited.getClass(), inherited); //TODO add check to not override none explicit values
+            });
             return this;
         }
 
@@ -74,9 +79,9 @@ public class ItemTemplate implements Template {
 
         public ItemTemplate build() {
             if(material.equals(Material.PLAYER_HEAD) && texture != null && !texture.isEmpty()) {
-                return new SkullTemplate(id, texture, displayName, rarity, defaultPropertySuppliers);
+                return new SkullTemplate(id, texture, displayName, rarity, components);
             }
-            return new ItemTemplate(id, material, displayName, rarity, defaultPropertySuppliers);
+            return new ItemTemplate(id, material, displayName, rarity, components);
         }
     }
 
@@ -101,17 +106,9 @@ public class ItemTemplate implements Template {
         return rarity;
     }
 
-    /**
-     * Get the default properties of this item template.
-     * @return New instances of default properties from suppliers
-     */
     @Override
-    public Set<Property> getDefaultProperties() { //TODO
-        Set<Property> properties = new HashSet<>();
-        for(Supplier<Property> supplier : defaultPropertySuppliers) {
-            properties.add(supplier.get());
-        }
-        return properties;
+    public Map<Class<? extends Component>, Component> getComponents() {
+        return components;
     }
 
     @Override

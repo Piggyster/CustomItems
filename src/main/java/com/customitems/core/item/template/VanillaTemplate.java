@@ -1,11 +1,12 @@
 package com.customitems.core.item.template;
 
+import com.customitems.core.component.Component;
 import com.customitems.core.item.ItemRarity;
-import com.customitems.core.property.Property;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -45,8 +46,8 @@ public class VanillaTemplate implements Template {
     }
 
     @Override
-    public Set<Property> getDefaultProperties() {
-        return Set.of();
+    public Map<Class<? extends Component>, Component> getComponents() {
+        return Map.of();
     }
 
     @Override
