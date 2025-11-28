@@ -80,4 +80,12 @@ public class VanillaTemplate implements Template {
         }
         return out.toString();
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if(o == this) return true;
+        if(!(o instanceof VanillaTemplate other)) return false;
+        if(other.material.equals(material)) return true;
+        return false;
+    }
 }

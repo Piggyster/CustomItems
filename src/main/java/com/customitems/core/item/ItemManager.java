@@ -2,6 +2,7 @@ package com.customitems.core.item;
 
 import com.customitems.core.ItemPlugin;
 import com.customitems.core.component.impl.BackpackComponent;
+import com.customitems.core.component.impl.RecipeComponent;
 import com.customitems.core.item.template.Template;
 import com.customitems.core.item.template.loader.DefaultLoader;
 import com.customitems.core.item.template.VanillaTemplate;
@@ -38,10 +39,8 @@ public class ItemManager {
 
         ItemPlugin plugin = ItemPlugin.get();
 
-        DefaultLoader loader = new DefaultLoader(new File(plugin.getDataFolder(), "templates"));
-        loader.loadAllTemplates().forEach(this::registerTemplate);
 
-        Bukkit.getScheduler().runTaskTimer(ItemPlugin.get(), () -> {
+        Bukkit.getScheduler().runTaskTimer(plugin, () -> {
             for(Player player : Bukkit.getOnlinePlayers()) {
                 ItemStack itemStack = player.getInventory().getItemInMainHand();
                 if(itemStack == null || itemStack.getType() == Material.AIR) continue;
@@ -51,6 +50,20 @@ public class ItemManager {
                 item.update(player, itemStack);
             }
         }, 0, 20L);
+    }
+
+    public void loadTemplates() {
+        DefaultLoader loader = new DefaultLoader(new File(ItemPlugin.get().getDataFolder(), "templates"));
+        List<Template> templates = loader.loadAllTemplates();
+
+        templates.forEach(this::registerTemplate);
+
+        templates.forEach(template -> {
+            if(template.getComponents().containsKey(RecipeComponent.class)) {
+               RecipeComponent component = (RecipeComponent) template.getComponents().get(RecipeComponent.class);
+               component.postInit();
+            }
+        });
     }
 
     public void registerTemplate(Template template) {

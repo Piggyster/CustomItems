@@ -10,6 +10,7 @@ import com.customitems.core.command.CraftCommand;
 import com.customitems.core.command.GiveCommand;
 import com.customitems.core.command.PropertyCommand;
 import com.customitems.core.command.StatCommand;
+import com.customitems.core.crafting.CraftingMenu;
 import com.customitems.core.crafting.RecipeManager;
 import com.customitems.core.item.ItemManager;
 import com.customitems.core.listener.InteractListener;
@@ -17,6 +18,11 @@ import com.customitems.core.menu.InventoryListener;
 import com.customitems.core.service.Services;
 import com.customitems.core.stat.StatListener;
 import com.customitems.core.stat.StatStorage;
+import org.bukkit.Bukkit;
+import org.bukkit.entity.Player;
+import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.InventoryHolder;
+import org.bukkit.inventory.InventoryView;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -41,9 +47,13 @@ public class ItemPlugin extends JavaPlugin {
         Services.register(AbilityRegistry.class, new AbilityRegistry());
         registerAbilities();
         registerProperties();
-        Services.register(ItemManager.class, new ItemManager());
-        Services.register(StatStorage.class, new StatStorage());
         Services.register(RecipeManager.class, new RecipeManager(new File(getDataFolder(), "recipes")));
+
+        ItemManager itemManager = new ItemManager();
+        Services.register(ItemManager.class, itemManager);
+        itemManager.loadTemplates();
+
+        Services.register(StatStorage.class, new StatStorage());
         Services.register(ArmorManager.class, new ArmorManager());
 
 
@@ -57,9 +67,17 @@ public class ItemPlugin extends JavaPlugin {
 
         getCommand("give").setExecutor(giveCommand);
         getCommand("give").setTabCompleter(giveCommand);
+    }
 
-
-
+    @Override
+    public void onDisable() {
+        for(Player player : Bukkit.getOnlinePlayers()) {
+            Inventory inventory = player.getOpenInventory().getTopInventory();
+            if(inventory.getHolder() instanceof CraftingMenu menu) {
+                menu.refundItems();
+                player.closeInventory();
+            }
+        }
     }
 
     private void registerEvents() {

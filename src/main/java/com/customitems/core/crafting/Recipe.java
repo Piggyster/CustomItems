@@ -20,4 +20,6 @@ public interface Recipe {
 
     Item createResult(Map<Integer, Item> items, Player player);
 
+    boolean consume(Map<Integer, Item> items);
+
 }

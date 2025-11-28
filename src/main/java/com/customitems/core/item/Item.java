@@ -172,6 +172,8 @@ public class Item {
             component.updateItem(this);
         });
 
+        save(itemStack); //HERE ?
+
         ItemMeta meta = itemStack.getItemMeta();
         assert(meta != null);
 
@@ -217,7 +219,6 @@ public class Item {
 
         itemStack.setItemMeta(meta);
         itemStack.setType(template.getMaterial());
-        save(itemStack);
         return itemStack;
     }
 
@@ -240,6 +241,10 @@ public class Item {
             }
         }
         return null;
+    }
+
+    public Collection<Attribute<?>> getAttributes() {
+        return attributes;
     }
 
     public <T> void addAttribute(Attribute<T> attribute) {

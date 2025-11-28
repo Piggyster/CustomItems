@@ -13,14 +13,17 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
+import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
 import java.util.Map;
 
-public class CraftingMenu implements Listener {
+public class CraftingMenu implements Listener, InventoryHolder {
 
     private static final ItemStack BORDER_ITEM;
     private static final ItemStack PLACEHOLDER_ITEM;
@@ -51,7 +54,7 @@ public class CraftingMenu implements Listener {
         this.player = player;
         recipeManager = Services.get(RecipeManager.class);
 
-        inventory = Bukkit.createInventory(player, 45, "Crafting Menu");
+        inventory = Bukkit.createInventory(this, 45, "Crafting Menu");
         initializeLayout();
         Bukkit.getPluginManager().registerEvents(this, ItemPlugin.get());
     }
@@ -102,6 +105,26 @@ public class CraftingMenu implements Listener {
 
     private void updateResult() {
         // Get items from the crafting grid
+        Map<Integer, Item> gridItems = getGridItems();
+
+        // Find a matching recipe
+        matchedRecipe = findMatchingRecipe(gridItems);
+
+        // Clear current result
+        inventory.setItem(RESULT_SLOT, null);
+
+        // If a recipe matches, set the result
+        if(matchedRecipe != null) {
+            Item resultItem = matchedRecipe.createResult(gridItems, player);
+            if(resultItem != null) {
+                inventory.setItem(RESULT_SLOT, resultItem.getStack());
+            }
+        } else {
+            inventory.setItem(RESULT_SLOT, PLACEHOLDER_ITEM);
+        }
+    }
+
+    private Map<Integer, Item> getGridItems() {
         Map<Integer, Item> gridItems = new HashMap<>();
 
         for (int row = 0; row < GRID_SIZE; row++) {
@@ -116,27 +139,28 @@ public class CraftingMenu implements Listener {
                 }
             }
         }
+        return gridItems;
+    }
 
-        // Find a matching recipe
-        matchedRecipe = findMatchingRecipe(gridItems);
+    private void populateGrid(Map<Integer, Item> gridItems) {
+        for(int row = 0; row < GRID_SIZE; row++) {
+            for(int col = 0; col < GRID_SIZE; col++) {
+                int slot = GRID_START_SLOT + (row * 9) + col;
+                int gridPos = row * GRID_SIZE + col;
 
-        // Clear current result
-        inventory.setItem(RESULT_SLOT, null);
-
-        // If a recipe matches, set the result
-        if (matchedRecipe != null) {
-            Item resultItem = matchedRecipe.createResult(gridItems, player);
-            if (resultItem != null) {
-                inventory.setItem(RESULT_SLOT, resultItem.getStack());
+                Item item = gridItems.get(gridPos);
+                if(item == null) {
+                    inventory.setItem(slot, null);
+                } else {
+                    inventory.setItem(slot, item.getStack());
+                }
             }
-        } else {
-            inventory.setItem(RESULT_SLOT, PLACEHOLDER_ITEM);
         }
     }
 
     private Recipe findMatchingRecipe(Map<Integer, Item> gridItems) {
-        for (Recipe recipe : recipeManager.getRecipes()) {
-            if (recipe.matches(gridItems)) {
+        for(Recipe recipe : recipeManager.getRecipes()) {
+            if(recipe.matches(gridItems)) {
                 return recipe;
             }
         }
@@ -211,11 +235,14 @@ public class CraftingMenu implements Listener {
         int slot = event.getRawSlot();
 
         // Allow clicking in player inventory
-        if (slot >= inventory.getSize()) return;
+        if (slot >= inventory.getSize()) {
+            Bukkit.getScheduler().runTask(ItemPlugin.get(), this::updateResult);
+            return;
+        }
 
         // Handle result slot
-        if (slot == RESULT_SLOT) {
-            if (matchedRecipe != null) {
+        if(slot == RESULT_SLOT) {
+            if(matchedRecipe != null) {
                 // Don't allow placing items in the result slot
                 if (event.getCursor() != null && event.getCursor().getType() != Material.AIR) {
                     event.setCancelled(true);
@@ -225,15 +252,16 @@ public class CraftingMenu implements Listener {
                 // Only allow taking items if there's a result
                 if (event.getCurrentItem() != null && event.getCurrentItem().getType() != Material.AIR &&
                         !event.getCurrentItem().isSimilar(PLACEHOLDER_ITEM) &&
-                        !event.getCurrentItem().isSimilar(BORDER_ITEM)) {
+                        !event.getCurrentItem().isSimilar(BORDER_ITEM) &&
+                        (event.getCursor() == null || event.getCursor().getType() == Material.AIR)) {
                     ItemStack resultCopy = event.getCurrentItem().clone();
 
-                    boolean success = consumeIngredients();
+                    Map<Integer, Item> gridItems = getGridItems();
+
+                    boolean success = matchedRecipe.consume(gridItems);
                     if(success) {
-                        if(event.getCursor() != null || !event.getCursor().getType().isAir()) {
-                            event.setCancelled(true);
-                            return;
-                        } //additional check
+                        event.setCancelled(true);
+                        populateGrid(gridItems);
                         event.getView().setCursor(resultCopy);
                         updateResult();
                         return;
@@ -252,7 +280,7 @@ public class CraftingMenu implements Listener {
         }
 
         // Allow modifying the crafting grid
-        if (isGridSlot(slot)) {
+        if(isGridSlot(slot)) {
             // Let the event proceed normally
             // The result will be updated after the click
             Bukkit.getScheduler().runTask(ItemPlugin.get(), this::updateResult);
@@ -284,6 +312,13 @@ public class CraftingMenu implements Listener {
         if (!event.getInventory().equals(inventory)) return;
 
         // Return any items in the crafting grid to the player
+        refundItems();
+
+        // Unregister listener
+        HandlerList.unregisterAll(this);
+    }
+
+    public void refundItems() {
         for (int row = 0; row < GRID_SIZE; row++) {
             for (int col = 0; col < GRID_SIZE; col++) {
                 int slot = GRID_START_SLOT + (row * 9) + col;
@@ -299,8 +334,12 @@ public class CraftingMenu implements Listener {
                 }
             }
         }
+    }
 
-        // Unregister listener
-        HandlerList.unregisterAll(this);
+
+    @NotNull
+    @Override
+    public Inventory getInventory() {
+        return inventory;
     }
 }

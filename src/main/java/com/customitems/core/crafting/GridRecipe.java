@@ -1,5 +1,6 @@
 package com.customitems.core.crafting;
 
+import com.customitems.core.attribute.Attribute;
 import com.customitems.core.item.Item;
 import com.customitems.core.item.ItemManager;
 import com.customitems.core.item.template.Template;
@@ -10,6 +11,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+@Deprecated
 public class GridRecipe implements Recipe {
 
     private final String id;
@@ -41,7 +43,7 @@ public class GridRecipe implements Recipe {
         return resultQuantity;
     }
 
-    @Override
+
     public Map<Integer, RecipeIngredient> getIngredients() {
         return ingredients;
     }
@@ -66,21 +68,21 @@ public class GridRecipe implements Recipe {
     @Override
     public Item createResult(Map<Integer, Item> items, Player player) {
         Item resultItem = new Item(resultTemplate);
-        /*
         if(baseItemSlot >= 0 && items.containsKey(baseItemSlot)) {
             Item baseItem = items.get(baseItemSlot);
-            for(Property property : baseItem.getProperties()) {
-                if(property instanceof PersistentProperty persistentProperty) {
-                    resultItem.addProperty(persistentProperty, true);
-                }
+            for(Attribute<?> attribute : baseItem.getAttributes()) {
+                resultItem.addAttribute(attribute);
             }
-            resultItem.save();
         }
         resultItem.getStack().setAmount(resultQuantity);
-        resultItem.updateDisplay();
-        */
+        resultItem.update(player, resultItem.getStack());
 
         return resultItem;
+    }
+
+    @Override
+    public boolean consume(Map<Integer, Item> items) {
+        return false;
     }
 
     public static class Builder {

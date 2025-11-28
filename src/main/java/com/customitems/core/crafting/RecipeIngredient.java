@@ -22,7 +22,7 @@ public class RecipeIngredient {
     }
 
     public boolean matches(Item item, int count) {
-        if (item == null) return false;
+        if(item == null) return false;
         if(!item.getTemplate().getId().equals(template.getId())) return false;
         return count >= quantity;
     }

@@ -18,6 +18,7 @@ public class ComponentRegistry {
         register(CategoryComponent.class);
         register(BackpackComponent.class);
         register(ArmorComponent.class);
+        register(RecipeComponent.class);
     }
 
     private static Map<String, Method> componentDeserializers;

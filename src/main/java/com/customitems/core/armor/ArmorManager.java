@@ -26,9 +26,6 @@ public class ArmorManager implements Service {
         Bukkit.getScheduler().runTaskTimer(ItemPlugin.get(), () -> {
             for(Player player : Bukkit.getOnlinePlayers()) {
                 ArmorSet set = updateArmor(player);
-                if(set != null) {
-                    player.sendMessage("Current set: " + set.getName());
-                }
             }
         }, 0, 20);
     }

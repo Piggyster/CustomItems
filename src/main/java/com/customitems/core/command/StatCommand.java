@@ -1,5 +1,8 @@
 package com.customitems.core.command;
 
+import com.customitems.core.crafting.Recipe;
+import com.customitems.core.crafting.RecipeManager;
+import com.customitems.core.crafting.ShapelessRecipe;
 import com.customitems.core.service.Services;
 import com.customitems.core.stat.StatStorage;
 import com.customitems.core.stat.StatType;
@@ -24,12 +27,13 @@ public class StatCommand implements CommandExecutor {
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
         if(!(sender instanceof Player player)) return false;
 
-        Map<StatType, Double> stats = storage.getStats(player.getUniqueId());
+        RecipeManager recipeManager = Services.get(RecipeManager.class);
 
-        player.sendMessage("Your stats:");
-        stats.forEach((stat, value) -> {
-            player.sendMessage(stat.toString() + ": " + value);
+        Recipe recipe = recipeManager.getRecipes().stream().filter(r -> r instanceof ShapelessRecipe).findAny().get();
+        recipe.getIngredients().forEach((gridPos, ingredient) -> {
+            player.sendMessage(gridPos + ": " + ingredient.getTemplate().getDisplayName());
         });
+
 
         return false;
     }
