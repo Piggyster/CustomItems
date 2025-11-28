@@ -4,6 +4,8 @@ import com.customitems.core.ability.AbilityRegistry;
 import com.customitems.core.ability.impl.FireballNode;
 import com.customitems.core.ability.impl.RightClickAbility;
 import com.customitems.core.ability.impl.TeleportNode;
+import com.customitems.core.armor.ArmorManager;
+import com.customitems.core.armor.event.ArmorListener;
 import com.customitems.core.command.CraftCommand;
 import com.customitems.core.command.GiveCommand;
 import com.customitems.core.command.PropertyCommand;
@@ -11,6 +13,7 @@ import com.customitems.core.command.StatCommand;
 import com.customitems.core.crafting.RecipeManager;
 import com.customitems.core.item.ItemManager;
 import com.customitems.core.listener.InteractListener;
+import com.customitems.core.menu.InventoryListener;
 import com.customitems.core.service.Services;
 import com.customitems.core.stat.StatListener;
 import com.customitems.core.stat.StatStorage;
@@ -41,6 +44,7 @@ public class ItemPlugin extends JavaPlugin {
         Services.register(ItemManager.class, new ItemManager());
         Services.register(StatStorage.class, new StatStorage());
         Services.register(RecipeManager.class, new RecipeManager(new File(getDataFolder(), "recipes")));
+        Services.register(ArmorManager.class, new ArmorManager());
 
 
         registerEvents();
@@ -65,6 +69,8 @@ public class ItemPlugin extends JavaPlugin {
         //pluginManager.registerEvents(new TestListener(), this);
 
         pluginManager.registerEvents(new InteractListener(), this);
+        pluginManager.registerEvents(new InventoryListener(), this);
+        pluginManager.registerEvents(new ArmorListener(), this);
     }
 
     private void registerProperties() {

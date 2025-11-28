@@ -1,5 +1,7 @@
 package com.customitems.core.attribute;
 
+import com.customitems.core.attribute.impl.BackpackDataAttribute;
+import com.customitems.core.attribute.impl.PrimalAttribute;
 import com.customitems.core.attribute.impl.UniqueAttribute;
 import com.google.common.collect.ImmutableList;
 
@@ -11,6 +13,8 @@ public class AttributeRegistry {
 
     static {
         register(UniqueAttribute.class);
+        register(BackpackDataAttribute.class);
+        register(PrimalAttribute.class);
     }
 
     private static Map<Class<? extends Attribute<?>>, AttributeFactory<?>> factories;

@@ -4,15 +4,18 @@ import com.customitems.core.attribute.Attribute;
 import com.customitems.core.attribute.AttributeFactory;
 import com.customitems.core.attribute.AttributeRegistry;
 import com.customitems.core.component.Component;
-import com.customitems.core.handler.LoreHandler;
+import com.customitems.core.component.impl.CategoryComponent;
+import com.customitems.core.handler.RarityHandler;
+import com.customitems.core.handler.display.DisplayHandler;
+import com.customitems.core.handler.display.DisplayVisitor;
 import com.customitems.core.item.template.Template;
 import com.customitems.core.service.Services;
+import com.google.common.base.Splitter;
 import de.tr7zw.nbtapi.NBT;
 import de.tr7zw.nbtapi.iface.ReadWriteNBT;
 import de.tr7zw.nbtapi.iface.ReadableNBT;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
-import org.bukkit.event.Event;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -70,23 +73,6 @@ public class Item {
 
 
     /**
-     * Marks the item with the template identifier.
-     *
-     * @return true if the item was marked, false if it was already marked
-     */
-    private boolean mark() {
-        if(template.isVanilla()) return false;
-        return NBT.modify(owner, nbt -> {
-            if(!nbt.hasTag("item_id")) {
-                nbt.setString("item_id", template.getId());
-                return true;
-            } else {
-                return false;
-            }
-        });
-    }
-
-    /**
      *
      */
     public void bind(@NotNull ItemStack stack) {
@@ -101,6 +87,7 @@ public class Item {
     public void load() {
         attributes.clear();
 
+        //TODO only get, not modify
         NBT.modify(owner, nbt -> {
             ReadWriteNBT attributeNbt = nbt.hasTag("attributes") ? nbt.getCompound("attributes") : null;
 
@@ -132,19 +119,13 @@ public class Item {
                 nbt.setString("item_id", template.getId());
             }
 
-            if(attributes.isEmpty() && nbt.hasTag("attributes")) {
-                nbt.removeKey("attributes");
-                return;
-            }
+            nbt.removeKey("attributes");
+
+            if(attributes.isEmpty()) return;
+
             ReadWriteNBT attributeNbt = nbt.getOrCreateCompound("attributes");
-            boolean executed = false;
             for(Attribute<?> attribute : attributes) {
                 attribute.saveToNBT(attributeNbt);
-                executed = true;
-            }
-
-            if(!executed) {
-                nbt.removeKey("attributes");
             }
         });
     }
@@ -195,32 +176,40 @@ public class Item {
         assert(meta != null);
 
         ItemRarity rarity = getRarity();
-        meta.setDisplayName(rarity.getColor() + template.getDisplayName());
 
-        List<String> lore = new ArrayList<>();
-        lore.add("");
+        DisplayVisitor visitor = new DisplayVisitor();
+
+        visitor.setDisplayName(rarity.getColor() + template.getDisplayName());
+        visitor.addLore("");
 
         for(Attribute<?> attribute : attributes) {
-            if(attribute instanceof LoreHandler contributor) {
-                lore.addAll(contributor.contributeLore(this, player));
+            if(attribute instanceof DisplayHandler displayHandler) {
+                displayHandler.processDisplay(player, visitor);
             }
         }
 
         for(Component component : template.getComponents().values()) {
-            if(component instanceof LoreHandler contributor) {
-                lore.addAll(contributor.contributeLore(this, player));
+            if(component instanceof DisplayHandler displayHandler) {
+                displayHandler.processDisplay(player, visitor);
             }
         }
 
-        lore.add(rarity.getColor() + "&l" + rarity.getDisplayName().toUpperCase());
+        String rarityDisplay = rarity.getColor() + "&l" + rarity.getDisplayName().toUpperCase();
+        if(hasComponent(CategoryComponent.class)) {
+            CategoryComponent component = getComponent(CategoryComponent.class);
+            rarityDisplay += " " + component.getCategory().toUpperCase();
+        }
+        visitor.addLore(rarityDisplay);
 
         String nbtString = NBT.get(itemStack, nbt -> {
             return nbt.toString();
         });
 
-        lore.add("&c" + nbtString);
+        visitor.addLore(Splitter.fixedLength(50).splitToList(nbtString));
 
-        lore = lore.stream().map(line -> ChatColor.translateAlternateColorCodes('&', line)).toList();
+        meta.setDisplayName(ChatColor.translateAlternateColorCodes('&', visitor.getDisplayName()));
+
+        List<String> lore = visitor.getLore().stream().map(line -> ChatColor.translateAlternateColorCodes('&', line)).toList();
         meta.setLore(lore);
 
         meta.addItemFlags(ItemFlag.values());
@@ -257,6 +246,10 @@ public class Item {
         attributes.add(attribute);
     }
 
+    public <T> void removeAttribute(Class<? extends Attribute<T>> clazz) {
+        attributes.removeIf(attribute -> attribute.getClass().isAssignableFrom(clazz));
+    }
+
     public <T> boolean hasComponent(Class<? extends Component> clazz) {
         return template.getComponents().containsKey(clazz);
     }
@@ -274,7 +267,21 @@ public class Item {
 
     public ItemRarity getRarity() {
         //TODO rarity modifiers
-        return template.getRarity();
+        ItemRarity rarity = template.getRarity();
+
+        for(Attribute<?> attribute : attributes) {
+            if(attribute instanceof RarityHandler rarityHandler) {
+                rarity = rarityHandler.processRarity(this, null);
+            }
+        }
+
+        for(Component component : template.getComponents().values()) {
+            if(component instanceof RarityHandler rarityHandler) {
+                rarity = rarityHandler.processRarity(this, null);
+            }
+        }
+
+        return rarity;
     }
 
     public ItemStack getStack() {
@@ -287,9 +294,9 @@ public class Item {
 
             String templateId = template.getId();
             byte[] persistentData = NBT.get(owner, nbt -> {
-                if(nbt.hasTag("properties")) {
-                    ReadableNBT propertyNbt = nbt.getCompound("properties");
-                    return propertyNbt.toString().getBytes(StandardCharsets.UTF_8);
+                if(nbt.hasTag("attributes")) {
+                    ReadableNBT attributeNbt = nbt.getCompound("attributes");
+                    return attributeNbt.toString().getBytes(StandardCharsets.UTF_8);
                 } else {
                     return new byte[0];
                 }

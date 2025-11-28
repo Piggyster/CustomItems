@@ -1,6 +1,7 @@
 package com.customitems.core.listener;
 
 import com.customitems.core.component.impl.InteractableComponent;
+import com.customitems.core.handler.interactable.InteractionContext;
 import com.customitems.core.item.Item;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -25,10 +26,12 @@ public class InteractListener implements Listener {
         InteractableComponent component = item.getComponent(InteractableComponent.class);
         assert(component != null);
 
+        InteractionContext context = new InteractionContext(player, item, player.getInventory().getHeldItemSlot());
+
         if(event.getAction() == Action.LEFT_CLICK_BLOCK || event.getAction() == Action.LEFT_CLICK_AIR) {
-            component.onLeftClick(player, item);
+            component.onLeftClick(context);
         } else if(event.getAction() == Action.RIGHT_CLICK_BLOCK || event.getAction() == Action.RIGHT_CLICK_AIR) {
-            component.onRightClick(player, item);
+            component.onRightClick(context);
         }
     }
 }

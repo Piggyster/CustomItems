@@ -1,5 +1,6 @@
 package com.customitems.core.command;
 
+import com.customitems.core.attribute.impl.PrimalAttribute;
 import com.customitems.core.item.Item;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -22,11 +23,10 @@ public class PropertyCommand implements CommandExecutor {
 
         Item item = Item.of(heldStack);
 
-        player.sendMessage("Property information:");
-        //item.getProperties().forEach(property -> {
-        //    player.sendMessage(property.toString());
-        //});
-
+        PrimalAttribute attribute = new PrimalAttribute();
+        item.addAttribute(attribute);
+        item.update(player, heldStack);
+        player.sendMessage("Applied primal");
         return false;
     }
 }

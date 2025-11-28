@@ -9,12 +9,12 @@ public class InteractableRegistry {
 
     static {
         register("test", new InteractableHandler(
-                (player, item) -> {
-                    player.sendMessage("Left click!");
+                (context) -> {
+                    context.player().sendMessage("Left click!");
                     return;
                 },
-                (player, item) -> {
-                    player.sendMessage("Right click!");
+                (context) -> {
+                    context.player().sendMessage("Right click!");
                     return;
                 }
         ));

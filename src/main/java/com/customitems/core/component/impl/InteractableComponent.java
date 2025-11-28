@@ -3,12 +3,14 @@ package com.customitems.core.component.impl;
 import com.customitems.core.component.Component;
 import com.customitems.core.handler.interactable.InteractableHandler;
 import com.customitems.core.handler.interactable.InteractableRegistry;
+import com.customitems.core.handler.interactable.InteractionContext;
 import com.customitems.core.item.Item;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import org.bukkit.entity.Player;
 
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 public class InteractableComponent extends Component {
 
@@ -20,7 +22,7 @@ public class InteractableComponent extends Component {
 
     private final InteractableHandler handler;
 
-    public InteractableComponent(BiConsumer<Player, Item> leftClickHandler, BiConsumer<Player, Item> rightClickHandler) {
+    public InteractableComponent(Consumer<InteractionContext> leftClickHandler, Consumer<InteractionContext> rightClickHandler) {
         handler = new InteractableHandler(leftClickHandler, rightClickHandler);
     }
 
@@ -31,11 +33,12 @@ public class InteractableComponent extends Component {
         }
     }
 
-    public void onLeftClick(Player player, Item item) {
-        handler.onLeftClick(player, item);
+    public void onLeftClick(InteractionContext context) {
+        handler.onLeftClick(context);
     }
 
-    public void onRightClick(Player player, Item item) {
-        handler.onRightClick(player, item);
+    public void onRightClick(InteractionContext context) {
+        handler.onRightClick(context);
+
     }
 }

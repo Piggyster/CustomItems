@@ -1,7 +1,6 @@
 package com.customitems.core.component;
 
-import com.customitems.core.component.impl.InteractableComponent;
-import com.customitems.core.component.impl.UniqueComponent;
+import com.customitems.core.component.impl.*;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
@@ -16,6 +15,9 @@ public class ComponentRegistry {
     static {
         register(UniqueComponent.class);
         register(InteractableComponent.class);
+        register(CategoryComponent.class);
+        register(BackpackComponent.class);
+        register(ArmorComponent.class);
     }
 
     private static Map<String, Method> componentDeserializers;

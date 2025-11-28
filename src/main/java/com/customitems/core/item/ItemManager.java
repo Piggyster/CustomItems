@@ -1,6 +1,7 @@
 package com.customitems.core.item;
 
 import com.customitems.core.ItemPlugin;
+import com.customitems.core.component.impl.BackpackComponent;
 import com.customitems.core.item.template.Template;
 import com.customitems.core.item.template.loader.DefaultLoader;
 import com.customitems.core.item.template.VanillaTemplate;
@@ -46,6 +47,7 @@ public class ItemManager {
                 if(itemStack == null || itemStack.getType() == Material.AIR) continue;
                 Item item = Item.of(itemStack);
 
+                if(item.hasComponent(BackpackComponent.class)) continue;
                 item.update(player, itemStack);
             }
         }, 0, 20L);
@@ -75,14 +77,15 @@ public class ItemManager {
         if(template.isVanilla()) {
             return new Item(stack, template);
         }
-        UUID uuid = extractUUID(stack);
+        return new Item(stack, template);
+        /*UUID uuid = extractUUID(stack);
         if(uuid != null) {
             Item item = strongCache.computeIfAbsent(uuid, id -> new Item(stack, template));
             item.bind(stack);
             return item;
         } else {
             return weakCache.computeIfAbsent(stack, s -> new Item(stack, template));
-        }
+        }*/
     }
 
     public UUID extractUUID(ItemStack itemStack) {
@@ -123,8 +126,8 @@ public class ItemManager {
                 ItemStack stack = template.createItemStack();
                 if(persistentDataLength > 0) {
                     NBT.modify(stack, nbt -> {
-                        ReadWriteNBT propertyNbt = nbt.getOrCreateCompound("properties");
-                        propertyNbt.mergeCompound(NBT.parseNBT(new String(persistentData, StandardCharsets.UTF_8)));
+                        ReadWriteNBT attributeNbt = nbt.getOrCreateCompound("attributes");
+                        attributeNbt.mergeCompound(NBT.parseNBT(new String(persistentData, StandardCharsets.UTF_8)));
                     });
                 }
                 return new Item(stack, template);

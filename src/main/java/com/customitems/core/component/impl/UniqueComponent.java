@@ -2,7 +2,8 @@ package com.customitems.core.component.impl;
 
 import com.customitems.core.attribute.impl.UniqueAttribute;
 import com.customitems.core.component.Component;
-import com.customitems.core.handler.LoreHandler;
+import com.customitems.core.handler.display.DisplayHandler;
+import com.customitems.core.handler.display.DisplayVisitor;
 import com.customitems.core.item.Item;
 import com.google.gson.JsonElement;
 import org.bukkit.entity.Player;
@@ -10,7 +11,7 @@ import org.bukkit.entity.Player;
 import java.util.List;
 import java.util.UUID;
 
-public class UniqueComponent extends Component implements LoreHandler {
+public class UniqueComponent extends Component {
 
     public static final String KEY = "unique";
 
@@ -27,8 +28,4 @@ public class UniqueComponent extends Component implements LoreHandler {
         item.addAttribute(attribute);
     }
 
-    @Override
-    public List<String> contributeLore(Item item, Player player) {
-        return List.of("&8This item is special.");
-    }
 }
