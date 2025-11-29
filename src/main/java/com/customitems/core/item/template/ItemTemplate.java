@@ -3,7 +3,9 @@ package com.customitems.core.item.template;
 import com.customitems.core.component.Component;
 import com.customitems.core.item.ItemRarity;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
@@ -113,7 +115,8 @@ public class ItemTemplate implements Template {
 
     @Override
     public ItemStack createItemStack() { //TODO
-        return new ItemStack(material);
+        ItemStack stack = new ItemStack(material);
+        return stack;
     }
 
     @Override

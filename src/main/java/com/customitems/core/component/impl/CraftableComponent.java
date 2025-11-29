@@ -12,11 +12,11 @@ import com.google.gson.JsonObject;
 import java.util.HashSet;
 import java.util.Set;
 
-public class RecipeComponent extends Component {
+public class CraftableComponent extends Component {
 
-    private static final String KEY = "recipe";
+    private static final String KEY = "craftable";
 
-    public static RecipeComponent deserialize(JsonElement json) {
+    public static CraftableComponent deserialize(JsonElement json) {
         /*
         RecipeManager recipeManager = Services.get(RecipeManager.class);
 
@@ -33,17 +33,17 @@ public class RecipeComponent extends Component {
         }
         return new RecipeComponent(recipes);
         */
-        return new RecipeComponent(json.getAsJsonObject());
+        return new CraftableComponent(json.getAsJsonObject());
     }
 
     private Set<Recipe> recipes;
     private JsonObject json;
 
-    public RecipeComponent(JsonObject json) {
+    public CraftableComponent(JsonObject json) {
         this.json = json;
     }
 
-    public RecipeComponent(Set<Recipe> recipes) {
+    public CraftableComponent(Set<Recipe> recipes) {
         this.recipes = recipes;
     }
 

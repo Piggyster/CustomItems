@@ -2,11 +2,10 @@ package com.customitems.core.item;
 
 import com.customitems.core.ItemPlugin;
 import com.customitems.core.component.impl.BackpackComponent;
-import com.customitems.core.component.impl.RecipeComponent;
+import com.customitems.core.component.impl.CraftableComponent;
 import com.customitems.core.item.template.Template;
 import com.customitems.core.item.template.loader.DefaultLoader;
 import com.customitems.core.item.template.VanillaTemplate;
-import com.customitems.core.item.template.loader.TemplateLoader;
 import com.customitems.core.service.Services;
 import com.google.common.collect.ImmutableList;
 import de.tr7zw.nbtapi.NBT;
@@ -59,8 +58,8 @@ public class ItemManager {
         templates.forEach(this::registerTemplate);
 
         templates.forEach(template -> {
-            if(template.getComponents().containsKey(RecipeComponent.class)) {
-               RecipeComponent component = (RecipeComponent) template.getComponents().get(RecipeComponent.class);
+            if(template.getComponents().containsKey(CraftableComponent.class)) {
+               CraftableComponent component = (CraftableComponent) template.getComponents().get(CraftableComponent.class);
                component.postInit();
             }
         });

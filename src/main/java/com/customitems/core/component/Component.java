@@ -1,6 +1,7 @@
 package com.customitems.core.component;
 
 import com.customitems.core.item.Item;
+import org.bukkit.inventory.ItemStack;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -13,7 +14,7 @@ public abstract class Component {
 
     }
 
-    public void updateItem(Item item) {
+    public void updateItem(Item item, ItemStack stack) {
 
     }
 

@@ -32,11 +32,6 @@ public class BackpackComponent extends Component {
         return size;
     }
 
-    @Override
-    public void updateItem(Item item) {
-
-    }
-
     private void onInteract(InteractionContext context) {
         Attribute<BackpackDataAttribute.BackpackData> attribute = context.item().getAttribute(BackpackDataAttribute.class);
         if(attribute == null) {

@@ -167,14 +167,14 @@ public class Item {
         owner.setType(template.getMaterial());
     }
 
-    public ItemStack update(Player player, ItemStack itemStack) {
+    public ItemStack update(Player player, ItemStack stack) {
         template.getComponents().forEach((clazz, component) -> {
-            component.updateItem(this);
+            component.updateItem(this, stack);
         });
 
-        save(itemStack); //HERE ?
+        save(stack); //HERE ?
 
-        ItemMeta meta = itemStack.getItemMeta();
+        ItemMeta meta = stack.getItemMeta();
         assert(meta != null);
 
         ItemRarity rarity = getRarity();
@@ -203,7 +203,7 @@ public class Item {
         }
         visitor.addLore(rarityDisplay);
 
-        String nbtString = NBT.get(itemStack, nbt -> {
+        String nbtString = NBT.get(stack, nbt -> {
             return nbt.toString();
         });
 
@@ -217,9 +217,9 @@ public class Item {
         meta.addItemFlags(ItemFlag.values());
         meta.setUnbreakable(true);
 
-        itemStack.setItemMeta(meta);
-        itemStack.setType(template.getMaterial());
-        return itemStack;
+        stack.setItemMeta(meta);
+        stack.setType(template.getMaterial());
+        return stack;
     }
 
 

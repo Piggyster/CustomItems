@@ -7,6 +7,7 @@ import com.customitems.core.handler.display.DisplayVisitor;
 import com.customitems.core.item.Item;
 import com.google.gson.JsonElement;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 
 import java.util.List;
 import java.util.UUID;
@@ -20,7 +21,7 @@ public class UniqueComponent extends Component {
     }
 
     @Override
-    public void updateItem(Item item) {
+    public void updateItem(Item item, ItemStack stack) {
         if(item.hasAttribute(UniqueAttribute.class)) return;
 
         UniqueAttribute attribute = new UniqueAttribute();

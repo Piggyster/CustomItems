@@ -2,7 +2,6 @@ package com.customitems.core.component;
 
 import com.customitems.core.component.impl.*;
 import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -18,7 +17,8 @@ public class ComponentRegistry {
         register(CategoryComponent.class);
         register(BackpackComponent.class);
         register(ArmorComponent.class);
-        register(RecipeComponent.class);
+        register(CraftableComponent.class);
+        register(ModelComponent.class);
     }
 
     private static Map<String, Method> componentDeserializers;
