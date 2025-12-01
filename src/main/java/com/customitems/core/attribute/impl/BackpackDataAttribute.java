@@ -10,6 +10,7 @@ import com.customitems.core.service.Services;
 import de.tr7zw.nbtapi.NBT;
 import de.tr7zw.nbtapi.iface.ReadWriteNBT;
 import de.tr7zw.nbtapi.iface.ReadableNBT;
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
@@ -61,6 +62,7 @@ public class BackpackDataAttribute extends Attribute<BackpackDataAttribute.Backp
             int i = 0;
             for(Map.Entry<Integer, Item> entry : value.getContents().entrySet()) {
                 Item item = entry.getValue();
+                item.update(player, item.getStack());
                 String displayName = item.getStack().getItemMeta().getDisplayName();
                 visitor.addLore(" &o" + displayName);
 

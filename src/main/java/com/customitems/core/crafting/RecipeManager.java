@@ -5,8 +5,10 @@ import com.customitems.core.item.ItemManager;
 import com.customitems.core.item.template.Template;
 import com.customitems.core.service.Services;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Streams;
 import com.google.gson.*;
 import org.bukkit.Bukkit;
+import org.bukkit.inventory.ItemStack;
 
 import java.io.File;
 import java.io.FileReader;
@@ -29,6 +31,7 @@ public class RecipeManager {
             recipeDirectory.mkdirs();
         }
 
+       // loadVanillaRecipes();
         //loadRecipes();
     }
 
@@ -66,6 +69,43 @@ public class RecipeManager {
                 }
             } catch(IOException ex) {
                 ex.printStackTrace();
+            }
+        }
+    }
+
+    public void loadVanillaRecipes() {
+        ItemManager itemManager = Services.get(ItemManager.class);
+
+        Iterator<org.bukkit.inventory.Recipe> iterator = Bukkit.recipeIterator();
+        while(iterator.hasNext()) {
+            org.bukkit.inventory.Recipe vanillaRecipe = iterator.next();
+            if(vanillaRecipe instanceof org.bukkit.inventory.ShapedRecipe shapedRecipe) {
+                Map<Integer, RecipeIngredient> ingredients = new HashMap<>();
+                int row = 0;
+                for(String rowStr : shapedRecipe.getShape()) {
+                    int column = 0;
+                    for(char c : rowStr.toCharArray()) {
+                        int gridPos = row * 3 + column;
+
+                        ItemStack stack = shapedRecipe.getIngredientMap().get(c);
+                        if(stack != null) {
+                            Template template = itemManager.getTemplate(stack.getType());
+                            if(template != null) {
+                                ingredients.put(gridPos, new RecipeIngredient(template, 1));
+                            }
+                        }
+
+                        column++;
+                    }
+                    row++;
+                }
+
+                Template result = itemManager.getTemplate(shapedRecipe.getResult().getType());
+                ShapedRecipe recipe = new ShapedRecipe(ingredients, result, -1);
+
+                registerRecipe(recipe);
+            } else if(vanillaRecipe instanceof org.bukkit.inventory.ShapelessRecipe shapelessRecipe) {
+
             }
         }
     }

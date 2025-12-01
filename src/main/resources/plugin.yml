@@ -3,7 +3,7 @@ author: Piggyster
 version: ${version}
 api-version: '1.20'
 main: com.customitems.core.ItemPlugin
-depends: [NBTAPI]
+depends: [NBTAPI, ProtocolLib]
 commands:
   property: {}
   give: {}

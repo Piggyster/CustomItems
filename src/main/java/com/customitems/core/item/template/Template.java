@@ -2,6 +2,7 @@ package com.customitems.core.item.template;
 
 import com.customitems.core.component.Component;
 import com.customitems.core.item.ItemRarity;
+import com.customitems.core.stat.ItemStatistics;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 
@@ -22,6 +23,8 @@ public interface Template {
     String getDisplayName();
 
     ItemRarity getRarity();
+
+    ItemStatistics getStatistics();
 
     Map<Class<? extends Component>, Component> getComponents();
 

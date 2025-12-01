@@ -2,6 +2,7 @@ package com.customitems.core.item.template;
 
 import com.customitems.core.component.Component;
 import com.customitems.core.item.ItemRarity;
+import com.customitems.core.stat.ItemStatistics;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
@@ -43,6 +44,11 @@ public class VanillaTemplate implements Template {
     @Override
     public ItemRarity getRarity() {
         return ItemRarity.COMMON;
+    }
+
+    @Override
+    public ItemStatistics getStatistics() {
+        return new ItemStatistics(Map.of());
     }
 
     @Override

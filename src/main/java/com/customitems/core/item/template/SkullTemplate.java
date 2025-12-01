@@ -3,6 +3,7 @@ package com.customitems.core.item.template;
 import com.customitems.core.component.Component;
 import com.customitems.core.item.ItemRarity;
 
+import com.customitems.core.stat.ItemStatistics;
 import de.tr7zw.nbtapi.NBT;
 import de.tr7zw.nbtapi.iface.ReadWriteNBT;
 import org.bukkit.Material;
@@ -19,8 +20,9 @@ public class SkullTemplate extends ItemTemplate {
     private final String texture;
 
     public SkullTemplate(@NotNull String id, @NotNull String texture, @NotNull String displayName,
-                         @NotNull ItemRarity rarity, @NotNull Map<Class<? extends Component>, Component> components) {
-        super(id, Material.PLAYER_HEAD, displayName, rarity, components);
+                         @NotNull ItemRarity rarity, @NotNull ItemStatistics statistics,
+                         @NotNull Map<Class<? extends Component>, Component> components) {
+        super(id, Material.PLAYER_HEAD, displayName, rarity, statistics, components);
         this.texture = texture;
     }
 

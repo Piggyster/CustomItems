@@ -10,6 +10,8 @@ import com.customitems.core.handler.display.DisplayHandler;
 import com.customitems.core.handler.display.DisplayVisitor;
 import com.customitems.core.item.template.Template;
 import com.customitems.core.service.Services;
+import com.customitems.core.stat.ItemStatistics;
+import com.customitems.core.stat.StatType;
 import com.google.common.base.Splitter;
 import de.tr7zw.nbtapi.NBT;
 import de.tr7zw.nbtapi.iface.ReadWriteNBT;
@@ -26,6 +28,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
 import java.util.*;
 
 /**
@@ -65,18 +69,6 @@ public class Item {
         attributes = new ArrayList<>();
 
         load();
-
-        //if(mark() || !owner.hasItemMeta()) {
-        //    updateDisplay();
-        //}
-    }
-
-
-    /**
-     *
-     */
-    public void bind(@NotNull ItemStack stack) {
-        owner = stack;
     }
 
 
@@ -130,42 +122,7 @@ public class Item {
         });
     }
 
-
-    /**
-     * Updates the item's display name and lore based on its properties.
-     * This method should be called when changes are made to the item's properties
-     */
-    public void updateDisplay() {
-        ItemMeta meta = owner.getItemMeta();
-        if(meta == null) return;
-        //do meta operations
-        ItemRarity rarity = template.getRarity();
-
-        meta.setDisplayName(rarity.getColor() + template.getDisplayName());
-
-        /*List<LoreContributor> loreContributors = properties.values().stream()
-                .filter(p -> p instanceof LoreContributor)
-                .map(p -> (LoreContributor) p)
-                .sorted(Comparator.comparingInt(LoreContributor::getLorePriority).reversed())
-                .toList();
-
-        LoreVisitor visitor = new LoreVisitor();
-
-        loreContributors.forEach(contributor -> contributor.contributeLore(visitor));
-
-        visitor.visit("");
-        visitor.visit(rarity.getColor().toString() + ChatColor.BOLD + rarity.getDisplayName().toUpperCase());
-
-        meta.setLore(visitor.getLore());
-        */
-
-
-        meta.addItemFlags(ItemFlag.values());
-        meta.setUnbreakable(true);
-
-        owner.setItemMeta(meta);
-        owner.setType(template.getMaterial());
-    }
+    private static final DecimalFormat NUMBER_FORMAT = new DecimalFormat("###,###.##");
 
     public ItemStack update(Player player, ItemStack stack) {
         template.getComponents().forEach((clazz, component) -> {
@@ -180,8 +137,14 @@ public class Item {
         ItemRarity rarity = getRarity();
 
         DisplayVisitor visitor = new DisplayVisitor();
-
         visitor.setDisplayName(rarity.getColor() + template.getDisplayName());
+
+        ItemStatistics statistics = template.getStatistics();
+        for(StatType stat : statistics) {
+            float value = statistics.getValue(stat);
+            visitor.addLore("&7" + stat.getDisplayName() + ": &9" + NUMBER_FORMAT.format(value));
+        }
+
         visitor.addLore("");
 
         for(Attribute<?> attribute : attributes) {
@@ -207,7 +170,7 @@ public class Item {
             return nbt.toString();
         });
 
-        visitor.addLore(Splitter.fixedLength(50).splitToList(nbtString));
+        //visitor.addLore(Splitter.fixedLength(50).splitToList(nbtString));
 
         meta.setDisplayName(ChatColor.translateAlternateColorCodes('&', visitor.getDisplayName()));
 
@@ -271,7 +234,6 @@ public class Item {
     }
 
     public ItemRarity getRarity() {
-        //TODO rarity modifiers
         ItemRarity rarity = template.getRarity();
 
         for(Attribute<?> attribute : attributes) {
@@ -287,6 +249,10 @@ public class Item {
         }
 
         return rarity;
+    }
+
+    public ItemStatistics getStatistics() {
+        return template.getStatistics();
     }
 
     public ItemStack getStack() {

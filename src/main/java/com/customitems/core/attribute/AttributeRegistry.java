@@ -4,6 +4,9 @@ import com.customitems.core.attribute.impl.BackpackDataAttribute;
 import com.customitems.core.attribute.impl.PrimalAttribute;
 import com.customitems.core.attribute.impl.UniqueAttribute;
 import com.google.common.collect.ImmutableList;
+import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.BlockDamageAbortEvent;
+import org.bukkit.event.block.BlockDamageEvent;
 
 import java.util.Collection;
 import java.util.Map;

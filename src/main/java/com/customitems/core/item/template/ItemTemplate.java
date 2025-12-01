@@ -2,6 +2,8 @@ package com.customitems.core.item.template;
 
 import com.customitems.core.component.Component;
 import com.customitems.core.item.ItemRarity;
+import com.customitems.core.stat.ItemStatistics;
+import com.customitems.core.stat.StatType;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.inventory.ItemStack;
@@ -26,14 +28,17 @@ public class ItemTemplate implements Template {
     private final Material material;
     private final String displayName;
     private final ItemRarity rarity;
+    private final ItemStatistics statistics;
     private final Map<Class<? extends Component>, Component> components;
 
     public ItemTemplate(@NotNull String id, @NotNull Material material, @NotNull String displayName,
-                        @NotNull ItemRarity rarity, @NotNull  Map<Class<? extends Component>, Component> components) {
+                        @NotNull ItemRarity rarity, @NotNull ItemStatistics statistics,
+                        @NotNull  Map<Class<? extends Component>, Component> components) {
         this.id = id;
         this.material = material;
         this.displayName = displayName;
         this.rarity = rarity;
+        this.statistics = statistics;
         this.components = components;
     }
 
@@ -42,6 +47,7 @@ public class ItemTemplate implements Template {
         private String displayName;
         private Material material = Material.STONE;
         private ItemRarity rarity = ItemRarity.COMMON;
+        private final Map<StatType, Float> statistics = new HashMap<>();
         private final Map<Class<? extends Component>, Component> components = new HashMap<>();
         private String texture;
 
@@ -65,6 +71,11 @@ public class ItemTemplate implements Template {
             return this;
         }
 
+        public Builder addStatistic(StatType stat, float value) {
+            statistics.put(stat, value);
+            return this;
+        }
+
         public Builder addComponent(Component component) {
             components.put(component.getClass(), component);
 
@@ -80,10 +91,11 @@ public class ItemTemplate implements Template {
         }
 
         public ItemTemplate build() {
+            ItemStatistics statistics = new ItemStatistics(this.statistics);
             if(material.equals(Material.PLAYER_HEAD) && texture != null && !texture.isEmpty()) {
-                return new SkullTemplate(id, texture, displayName, rarity, components);
+                return new SkullTemplate(id, texture, displayName, rarity, statistics, components);
             }
-            return new ItemTemplate(id, material, displayName, rarity, components);
+            return new ItemTemplate(id, material, displayName, rarity, statistics, components);
         }
     }
 
@@ -106,6 +118,11 @@ public class ItemTemplate implements Template {
     @Override
     public ItemRarity getRarity() {
         return rarity;
+    }
+
+    @Override
+    public ItemStatistics getStatistics() {
+        return statistics;
     }
 
     @Override

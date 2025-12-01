@@ -41,12 +41,24 @@ public class ItemManager {
 
         Bukkit.getScheduler().runTaskTimer(plugin, () -> {
             for(Player player : Bukkit.getOnlinePlayers()) {
+                /*long timeNow = System.currentTimeMillis();
+                for(ItemStack stack : player.getInventory().getContents()) {
+                    if(stack == null || stack.getType().isAir()) continue;
+                    Item item = Item.of(stack);
+                    item.update(player, stack);
+                }
+                long difference = System.currentTimeMillis() - timeNow;
+                player.sendMessage("Update took: " + difference + "ms");
+                */
                 ItemStack itemStack = player.getInventory().getItemInMainHand();
                 if(itemStack == null || itemStack.getType() == Material.AIR) continue;
                 Item item = Item.of(itemStack);
 
                 if(item.hasComponent(BackpackComponent.class)) continue;
+                long timeNow = System.currentTimeMillis();
                 item.update(player, itemStack);
+                long difference = System.currentTimeMillis() - timeNow;
+                //player.sendMessage("Update took: " + difference + "ms");
             }
         }, 0, 20L);
     }
@@ -73,10 +85,14 @@ public class ItemManager {
         Template template = templates.get(id);
         if(template == null) {
             Material material = Material.getMaterial(id.toUpperCase());
-            if(material == null) return null;
-            return new VanillaTemplate(material);
+            return getTemplate(material);
         }
         return template;
+    }
+
+    public Template getTemplate(Material material) {
+        if(material == null) return null;
+        return new VanillaTemplate(material);
     }
 
     public List<Template> getTemplates() {

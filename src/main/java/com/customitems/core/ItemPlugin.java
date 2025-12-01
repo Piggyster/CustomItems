@@ -18,6 +18,7 @@ import com.customitems.core.menu.InventoryListener;
 import com.customitems.core.service.Services;
 import com.customitems.core.stat.StatListener;
 import com.customitems.core.stat.StatStorage;
+import com.customitems.ores.OreManager;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
@@ -47,15 +48,19 @@ public class ItemPlugin extends JavaPlugin {
         Services.register(AbilityRegistry.class, new AbilityRegistry());
         registerAbilities();
         registerProperties();
-        Services.register(RecipeManager.class, new RecipeManager(new File(getDataFolder(), "recipes")));
+
+        RecipeManager recipeManager = new RecipeManager(new File(getDataFolder(), "recipes"));
+        Services.register(RecipeManager.class, recipeManager);
 
         ItemManager itemManager = new ItemManager();
         Services.register(ItemManager.class, itemManager);
         itemManager.loadTemplates();
+        recipeManager.loadVanillaRecipes();
 
         Services.register(StatStorage.class, new StatStorage());
         Services.register(ArmorManager.class, new ArmorManager());
 
+        Services.register(OreManager.class, new OreManager());
 
         registerEvents();
 

@@ -45,7 +45,7 @@ public class TestListener implements Listener {
             //if(inventory.equals(event.getInventory())) {
             //    property.updateContents();
                 //item.save();
-                item.updateDisplay();
+                //item.updateDisplay();
 
         }
     }

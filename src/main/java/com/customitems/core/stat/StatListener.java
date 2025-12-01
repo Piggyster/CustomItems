@@ -88,6 +88,7 @@ public class StatListener implements Listener {
         if(!(event.getEntity() instanceof Player player)) return;
         org.bukkit.entity.Item itemEntity = event.getItem();
         Item item = Item.of(itemEntity.getItemStack());
+        item.update(player, item.getStack());
         itemEntity.setItemStack(item.getStack());
         storage.recalculate(player);
     }

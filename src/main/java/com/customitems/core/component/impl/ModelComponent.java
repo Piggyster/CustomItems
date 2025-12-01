@@ -11,8 +11,8 @@ public class ModelComponent extends Component {
 
     private static final String KEY = "model";
 
-    public static ModelComponent deserialize(JsonElement json) {
-        return new ModelComponent(json.getAsString());
+    public static ModelComponent deserialize(JsonElement json, String templateId) {
+        return new ModelComponent(templateId);
     }
 
     private NamespacedKey namespacedKey;

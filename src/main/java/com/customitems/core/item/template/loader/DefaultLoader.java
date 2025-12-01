@@ -6,6 +6,8 @@ import com.customitems.core.component.ComponentRegistry;
 import com.customitems.core.item.ItemRarity;
 import com.customitems.core.item.template.ItemTemplate;
 import com.customitems.core.item.template.Template;
+import com.customitems.core.stat.ItemStatistics;
+import com.customitems.core.stat.StatType;
 import com.google.gson.*;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -17,7 +19,9 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Supplier;
 
 /**
@@ -84,13 +88,26 @@ public class DefaultLoader extends AbstractLoader {
                 }
             }
 
+            if(json.has("statistics")) {
+                JsonObject statisticsJson = json.getAsJsonObject("statistics");
+                for(String key : statisticsJson.keySet()) {
+                    try {
+                        StatType stat = StatType.valueOf(key.toUpperCase());
+                        JsonPrimitive statisticJson = statisticsJson.getAsJsonPrimitive(key);
+                        builder.addStatistic(stat, statisticJson.getAsFloat());
+                    } catch(EnumConstantNotPresentException ex) {
+                        Bukkit.getLogger().warning("Invalid statistic in template " + id + ": " + key);
+                    }
+                }
+            }
+
             // Process components
             if (json.has("components")) {
                 JsonObject componentsJson = json.getAsJsonObject("components");
                 for(String key : componentsJson.keySet()) {
                     ItemPlugin.get().getLogger().warning("Attempting to load " + key + " component");
                     JsonElement componentJson = componentsJson.get(key);
-                    Component component = ComponentRegistry.deserialize(key, componentJson);
+                    Component component = ComponentRegistry.deserialize(key, componentJson, id);
 
                     if(component == null) continue;
                     ItemPlugin.get().getLogger().warning("Found component deserializer");
